@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERAS Protocol Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#42C0F5;--indigo:#6F6BD7;--deep:#3a37a8;
+  --bg:#f0f2f8;--card:#fff;--text:#1a1a2e;--muted:#6b7280;--border:#e5eaf2;
+  --danger:#ef4444;--success:#10b981;--warning:#f59e0b;
+  --shadow:0 4px 24px rgba(111,107,215,.10),0 1px 4px rgba(0,0,0,.06);
+  --font:-apple-system,'DM Sans',BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  --serif:'DM Serif Display',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+/* Topbar */
+.topbar{background:linear-gradient(135deg,var(--sky),var(--indigo));height:56px;display:flex;align-items:center;padding:0 20px;gap:12px;box-shadow:0 2px 16px rgba(0,0,0,.12);position:sticky;top:0;z-index:100;flex-shrink:0}
+.topbar-logo{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.topbar-logo svg{width:17px;height:17px;stroke:#fff;fill:none}
+.topbar-titles{flex:1}
+.topbar-title{font-family:var(--serif);font-size:17px;color:#fff;line-height:1.1}
+.topbar-sub{font-size:10px;color:rgba(255,255,255,.7);letter-spacing:.4px}
+.topbar-acts{display:flex;gap:8px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 15px;border-radius:18px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .15s;text-decoration:none}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;flex-shrink:0}
+.btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3)}
+.btn-ghost:hover{background:rgba(255,255,255,.25)}
+.btn-white{background:#fff;color:var(--indigo)}
+.btn-white:hover{background:#f0f0ff}
+.btn-primary{background:linear-gradient(135deg,var(--sky),var(--indigo));color:#fff;box-shadow:0 3px 10px rgba(111,107,215,.3)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:5px 12px;font-size:11px}
+.btn-xs{padding:3px 9px;font-size:10px;border-radius:12px}
+/* Layout */
+.layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px)}
+/* Sidebar */
+.sidebar{width:260px;background:var(--card);border-right:1.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sb-hdr{padding:14px 16px 10px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sb-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.sb-scroll{flex:1;overflow-y:auto;padding:6px}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* Sidebar protocol entry */
+.sb-proto{border-radius:10px;margin-bottom:3px}
+.sb-proto-hdr{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;border-radius:10px;transition:background .12s}
+.sb-proto-hdr:hover{background:var(--bg)}
+.sb-proto-hdr.active{background:linear-gradient(135deg,rgba(66,192,245,.1),rgba(111,107,215,.1))}
+.sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-proto-name{font-size:13px;font-weight:700;flex:1;color:var(--text)}
+.sb-caret{color:var(--muted);transition:transform .2s}
+.sb-caret svg{width:13px;height:13px;stroke:currentColor;fill:none}
+.sb-phases{padding:0 0 3px 24px}
+.sb-phase{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .12s}
+.sb-phase:hover{background:var(--bg);color:var(--text)}
+.sb-phase.active{background:rgba(111,107,215,.1);color:var(--indigo);font-weight:700}
+.sb-phase-pip{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.sb-add-phase{font-style:italic;color:var(--indigo);opacity:.8}
+/* Main */
+.main{flex:1;overflow-y:auto;padding:22px}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* Breadcrumb */
+.bc{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-bottom:18px;flex-wrap:wrap}
+.bc span.link{cursor:pointer;transition:color .12s}
+.bc span.link:hover{color:var(--indigo)}
+.bc-sep{opacity:.4}
+/* Page header */
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-title{font-family:var(--serif);font-size:22px;color:var(--text)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.page-acts{display:flex;gap:7px;flex-wrap:wrap}
+/* Phase chips */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.chip{padding:5px 14px;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--muted);transition:all .15s}
+.chip:hover{border-color:var(--indigo)}
+.chip.active{background:linear-gradient(135deg,var(--sky),var(--indigo));border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(111,107,215,.3)}
+.chip.dashed{border-style:dashed}
+/* Section block */
+.sec-block{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;transition:box-shadow .15s}
+.sec-block:hover{box-shadow:var(--shadow)}
+.sec-block-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:#f8f9fc;border-bottom:1.5px solid var(--border)}
+.sec-block-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--indigo)}
+.sec-block-acts{display:flex;gap:5px}
+/* Intervention row */
+.iv-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);transition:background .12s}
+.iv-row:last-child{border-bottom:none}
+.iv-row:hover{background:#fafbff}
+.iv-info{flex:1;min-width:0}
+.iv-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iv-desc{font-size:11px;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.iv-acts{display:flex;gap:5px;flex-shrink:0}
+/* Icon button */
+.ibtn{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .12s;flex-shrink:0}
+.ibtn svg{width:13px;height:13px;stroke:currentColor;fill:none}
+.ibtn:hover{border-color:var(--indigo);color:var(--indigo);background:rgba(111,107,215,.07)}
+.ibtn.del:hover{border-color:var(--danger);color:var(--danger);background:rgba(239,68,68,.07)}
+/* Add row */
+.add-row{display:flex;align-items:center;gap:7px;padding:9px 16px;cursor:pointer;color:var(--indigo);font-size:12px;font-weight:700;border-top:1.5px dashed var(--border);transition:background .12s}
+.add-row:hover{background:rgba(111,107,215,.05)}
+.add-row svg{width:14px;height:14px;stroke:currentColor;fill:none}
+/* Empty */
+.empty{text-align:center;padding:32px 20px;color:var(--muted);font-size:13px}
+/* Overview grid */
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.ov-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+.ov-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--sky),var(--indigo));opacity:0;transition:opacity .18s}
+.ov-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.ov-card:hover::before{opacity:1}
+.ov-card.add-card{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:120px}
+.ov-card-name{font-family:var(--serif);font-size:17px;margin-bottom:5px}
+.ov-card-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.ov-stats{display:flex;gap:14px}
+.stat-num{font-size:17px;font-weight:800;color:var(--indigo)}
+.stat-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+/* Modal */
+.modal-over{display:none;position:fixed;inset:0;background:rgba(26,26,46,.45);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-over.show{display:flex}
+.modal{background:var(--card);border-radius:18px;width:100%;max-width:660px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;animation:popIn .22s ease}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1.5px solid var(--border);flex-shrink:0}
+.modal-title{font-family:var(--serif);font-size:18px}
+.modal-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.modal-close:hover{background:var(--border)}
+.modal-close svg{width:14px;height:14px;stroke:currentColor;fill:none}
+.modal-body{padding:18px 22px;overflow-y:auto;flex:1}
+.modal-foot{padding:12px 22px;border-top:1.5px solid var(--border);display:flex;justify-content:flex-end;gap:9px;background:#f8f9fc;flex-shrink:0}
+/* Tabs */
+.tabs{display:flex;gap:3px;background:var(--bg);border-radius:9px;padding:3px;margin-bottom:16px}
+.tab{flex:1;padding:6px;text-align:center;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;color:var(--muted);border:none;background:none;font-family:var(--font);transition:all .12s}
+.tab.active{background:var(--card);color:var(--indigo);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+/* Form */
+.fg{margin-bottom:16px}
+.fg:last-child{margin-bottom:0}
+label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:5px}
+input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;background:var(--card);transition:border-color .15s}
+input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,245,.13)}
+.hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4}
+/* Rich text editor */
+.rte-bar{display:flex;flex-wrap:wrap;gap:3px;padding:7px 9px;background:var(--bg);border:1.5px solid var(--border);border-bottom:none;border-radius:9px 9px 0 0;align-items:center}
+.rte-grp{display:flex;gap:2px;padding-right:7px;border-right:1.5px solid var(--border);margin-right:3px}
+.rte-grp:last-child{border-right:none;padding-right:0;margin-right:0}
+.rbtn{width:26px;height:26px;border-radius:5px;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--text);display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.rbtn svg{width:13px;height:13px;fill:currentColor}
+.rbtn:hover{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--indigo)}
+.rsel{height:26px;border:1.5px solid var(--border);border-radius:5px;font-family:var(--font);font-size:11px;color:var(--text);background:var(--card);padding:0 6px;cursor:pointer;outline:none;min-width:90px}
+.rte{min-height:240px;max-height:380px;overflow-y:auto;padding:14px 16px;border:1.5px solid var(--border);border-radius:0 0 9px 9px;font-family:var(--font);font-size:14px;line-height:1.7;color:var(--text);background:var(--card);outline:none}
+.rte:focus{border-color:var(--sky)}
+.rte h2{font-family:var(--serif);font-size:18px;margin:12px 0 5px}
+.rte h3{font-size:14px;font-weight:700;margin:10px 0 4px}
+.rte h4{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--indigo);margin:9px 0 3px}
+.rte p{margin-bottom:7px}
+.rte ul,.rte ol{padding-left:20px;margin-bottom:8px}
+.rte li{margin-bottom:3px}
+.rte strong{font-weight:700;color:var(--deep)}
+.rte table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.rte th{background:linear-gradient(135deg,var(--sky),var(--indigo));color:#fff;padding:6px 9px;text-align:left;font-weight:700}
+.rte td{padding:6px 9px;border-bottom:1px solid var(--border)}
+.rte img { max-width:100%; border-radius:8px; margin:8px 0; display:block; }
+/* Confirm */
+.cfm-over{display:none;position:fixed;inset:0;background:rgba(26,26,46,.5);backdrop-filter:blur(4px);z-index:600;align-items:center;justify-content:center;padding:20px}
+.cfm-over.show{display:flex}
+.cfm{background:var(--card);border-radius:14px;padding:26px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:popIn .2s ease}
+.cfm-icon{width:48px;height:48px;background:rgba(239,68,68,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.cfm-icon svg{width:22px;height:22px;stroke:var(--danger);fill:none}
+.cfm-title{font-family:var(--serif);font-size:17px;margin-bottom:6px}
+.cfm-msg{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:18px}
+.cfm-acts{display:flex;gap:9px;justify-content:center}
+/* Status badge */
+.status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px}
+.status.ok{background:rgba(16,185,129,.1);color:var(--success)}
+.status.saving{background:rgba(245,158,11,.1);color:var(--warning)}
+.status.err{background:rgba(239,68,68,.1);color:var(--danger)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+/* Toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.s{background:var(--success);color:#fff}
+#toast.e{background:var(--danger);color:#fff}
+#toast.i{background:var(--indigo);color:#fff}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+</style>
+</head>
+<body>
+
+
+<!-- CONFIRM -->
+<div class="cfm-over" id="cfm-over">
+  <div class="cfm">
+    <div class="cfm-icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+    <div class="cfm-title" id="cfm-title">Delete?</div>
+    <div class="cfm-msg" id="cfm-msg">This cannot be undone.</div>
+    <div class="cfm-acts">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeCfm()">Cancel</button>
+      <button class="btn btn-sm btn-danger" id="cfm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTERVENTION MODAL -->
+<div class="modal-over" id="iv-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="iv-modal-title">Edit Intervention</div>
+      <button class="modal-close" onclick="closeIvModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('basic',this)">Basic Info</button>
+        <button class="tab" onclick="switchTab('content',this)">Full Content</button>
+      </div>
+      <div id="tab-basic">
+        <div class="fg"><label>Intervention Name</label><input type="text" id="iv-name" placeholder="e.g. Ketamine Infusion"></div>
+        <div class="fg"><label>Summary (shown in list)</label><input type="text" id="iv-summary" placeholder="Brief description"><div class="hint">One line shown under the intervention name in the list.</div></div>
+        <div class="fg"><label>Section</label><input type="text" id="iv-section" placeholder="e.g. Pain Management"><div class="hint">Use an existing section name to add to it, or type a new one to create it.</div></div>
+      </div>
+      <div id="tab-content" style="display:none">
+        <div class="rte-bar">
+          <div class="rte-grp">
+            <select class="rsel" onchange="rfmt('formatBlock',this.value);this.blur()">
+              <option value="p">Paragraph</option>
+              <option value="h2">Heading 1</option>
+              <option value="h3">Heading 2</option>
+              <option value="h4">Heading 3</option>
+            </select>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('bold')" title="Bold"><strong>B</strong></button>
+            <button class="rbtn" onclick="rfmt('italic')" title="Italic"><em>I</em></button>
+            <button class="rbtn" onclick="rfmt('underline')" title="Underline"><u>U</u></button>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('insertUnorderedList')" title="Bullet list"><svg viewBox="0 0 20 20"><path d="M4 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
+            <button class="rbtn" onclick="rfmt('insertOrderedList')" title="Numbered list"><svg viewBox="0 0 20 20"><path d="M3 5h2V4H4V3H3v2zm0 4h2V8H4V7H3v2zM3 13h2v-1H4v-1H3v2zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
+            <button class="rbtn" onclick="rInsertTable()" title="Insert table"><svg viewBox="0 0 20 20"><path d="M3 3h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v3h4V5H4zm0 5v3h4v-3H4zm0 5v1h4v-1H4zm6-10v3h6V5h-6zm0 5v3h6v-3h-6zm0 5v1h6v-1h-6z"/></svg></button>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rInsertImage()" title="Insert image">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm2 0v7.5l3-2.5 3 4 2-2.5 3 3V4H4zm0 12h12v-1.5l-3-3-2 2.5-3-4-4 3.5V16z"/></svg>
+            </button>
+            <input type="file" id="rte-img-input" accept="image/*" style="display:none" onchange="rHandleImageFile(event)">
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('removeFormat')" title="Clear formatting" style="font-size:10px;font-weight:700">Tx</button>
+          </div>
+        </div>
+        <div class="rte" id="rte" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeIvModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveIv()">Save Intervention</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISUAL AID PHASE MODAL -->
+<div class="modal-over" id="visual-aid-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="va-modal-title">Add Visual Aid</div>
+      <button class="modal-close" onclick="closeVaModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>Title</label>
+        <input type="text" id="va-title" placeholder="e.g. Regional Block Diagram, Fluid Algorithm">
+        <div class="hint">Shown as the phase name in the navigation.</div>
+      </div>
+      <div class="fg">
+        <label>Image</label>
+        <div id="va-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s" onclick="$('va-img-input').click()" ondragover="vaDragOver(event)" ondragleave="vaDragLeave(event)" ondrop="vaDropFile(event)">
+          <div style="font-size:28px;margin-bottom:6px">🖼️</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px">Drop image here or click to browse</div>
+          <div style="font-size:11px;color:var(--muted)">PNG, JPG, GIF, WebP — stored as base64 in the protocol data</div>
+          <input type="file" id="va-img-input" accept="image/*" style="display:none" onchange="vaHandleFile(event)">
+        </div>
+        <div id="va-preview" style="display:none;margin-top:12px;text-align:center">
+          <img id="va-preview-img" style="max-width:100%;max-height:260px;border-radius:10px;border:1.5px solid var(--border);object-fit:contain">
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px">
+            <span id="va-preview-name" style="font-size:12px;color:var(--muted)"></span>
+            <button onclick="clearVaImage()" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:12px;font-weight:700">Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Caption <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">(optional)</span></label>
+        <input type="text" id="va-caption" placeholder="e.g. Abdominal wall nerve block positions (Peter Hebbard, 2008)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeVaModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveVaPhase()">Save Visual Aid</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROTOCOL MODAL -->
+<div class="modal-over" id="add-proto-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr">
+      <div class="modal-title">Add Protocol</div>
+      <button class="modal-close" onclick="closeAddProtoModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Mode tabs -->
+      <div class="tabs" style="margin-bottom:20px">
+        <button class="tab active" id="proto-tab-upload" onclick="switchProtoTab('upload',this)">📄 Upload Document</button>
+        <button class="tab" id="proto-tab-manual" onclick="switchProtoTab('manual',this)">✏️ Create Manually</button>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div id="proto-upload-pane">
+        <div id="upload-idle">
+          <div style="border:2px dashed var(--border);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s" id="drop-zone" onclick="$('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+            <div style="font-size:32px;margin-bottom:8px">📂</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Drop your document here</div>
+            <div style="font-size:12px;color:var(--muted)">PDF or Word (.docx) — or click to browse</div>
+            <input type="file" id="file-input" accept=".pdf,.docx,.doc" style="display:none" onchange="handleFileSelect(event)">
+          </div>
+          <div id="file-chosen" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(66,192,245,.08);border:1.5px solid var(--sky);border-radius:10px;font-size:13px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📄</span>
+            <div style="flex:1">
+              <div id="file-chosen-name" style="font-weight:700;color:var(--text)"></div>
+              <div id="file-chosen-size" style="font-size:11px;color:var(--muted)"></div>
+            </div>
+            <button onclick="clearFile()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px">×</button>
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;background:#f7f9fc;border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6;border:1.5px solid var(--border)">
+            <strong style="color:var(--text)">How it works:</strong> Claude reads your document and automatically extracts interventions, dosing, and protocols — structured into preoperative, intraoperative, and postoperative phases, exactly like the existing protocols.
+          </div>
+        </div>
+
+        <!-- Processing state -->
+        <div id="upload-processing" style="display:none;text-align:center;padding:32px 20px">
+          <div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--indigo);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div>
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Analysing document…</div>
+          <div style="font-size:12px;color:var(--muted)" id="processing-status">Reading document content</div>
+        </div>
+
+        <!-- Result preview -->
+        <div id="upload-result" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:20px">✅</span>
+            <div style="font-weight:700;color:var(--success);font-size:14px">Protocol extracted successfully</div>
+          </div>
+          <div style="background:#f7f9fc;border:1.5px solid var(--border);border-radius:12px;padding:14px;font-size:12px;max-height:220px;overflow-y:auto" id="result-preview"></div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">Review the summary above, then click <strong>Add Protocol</strong> to save it. You can edit any details afterwards in the editor.</div>
+        </div>
+
+        <!-- Error state -->
+        <div id="upload-error" style="display:none;padding:14px;background:rgba(239,68,68,.07);border:1.5px solid var(--danger);border-radius:10px;font-size:13px;color:var(--danger)" id="upload-error-msg"></div>
+      </div>
+
+      <!-- MANUAL TAB -->
+      <div id="proto-manual-pane" style="display:none">
+        <div class="fg"><label>Protocol Name</label><input type="text" id="manual-proto-name" placeholder="e.g. Thoracic"></div>
+        <div class="fg"><label>Description</label><input type="text" id="manual-proto-desc" placeholder="e.g. Vanderbilt — Thoracic Surgery ERAS Protocol"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeAddProtoModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="add-proto-btn" onclick="confirmAddProtocol()">Add Protocol</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIMPLE INPUT MODAL (section, phase) -->
+<div class="modal-over" id="inp-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="inp-title">Add</div>
+      <button class="modal-close" onclick="closeInpModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label id="inp-label">Name</label><input type="text" id="inp-val" placeholder=""></div>
+      <div class="fg" id="inp-desc-fg" style="display:none"><label>Description</label><input type="text" id="inp-desc" placeholder=""></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeInpModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="inp-ok">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-over" id="settings-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" onclick="closeSettings()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">These keys are optional and stored only in your browser.</p>
+      <div class="fg">
+        <label>Anthropic API Key <span style="background:rgba(111,107,215,.1);color:var(--indigo);font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700">FOR DOCUMENT UPLOAD</span></label>
+        <input type="text" id="settings-anthropic-key" placeholder="sk-ant-...">
+        <div class="hint">Required to parse uploaded PDF/Word documents. Free trial at <a href="https://console.anthropic.com" target="_blank" style="color:var(--indigo)">console.anthropic.com</a>.</div>
+      </div>
+      <div class="fg">
+        <label>ImgBB API Key <span style="background:rgba(16,185,129,.1);color:var(--success);font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700">FOR IMAGE UPLOAD</span></label>
+        <input type="text" id="settings-imgbb-key" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+        <div class="hint">Required for visual aid and RTE image uploads. Free at <a href="https://api.imgbb.com" target="_blank" style="color:var(--indigo)">api.imgbb.com</a>.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="cfm-over" id="cfm-over">
+  <div class="cfm">
+    <div class="cfm-icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+    <div class="cfm-title" id="cfm-title">Delete?</div>
+    <div class="cfm-msg" id="cfm-msg">This cannot be undone.</div>
+    <div class="cfm-acts">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeCfm()">Cancel</button>
+      <button class="btn btn-sm btn-danger" id="cfm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTERVENTION MODAL -->
+<div class="modal-over" id="iv-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="iv-modal-title">Edit Intervention</div>
+      <button class="modal-close" onclick="closeIvModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('basic',this)">Basic Info</button>
+        <button class="tab" onclick="switchTab('content',this)">Full Content</button>
+      </div>
+      <div id="tab-basic">
+        <div class="fg"><label>Intervention Name</label><input type="text" id="iv-name" placeholder="e.g. Ketamine Infusion"></div>
+        <div class="fg"><label>Summary (shown in list)</label><input type="text" id="iv-summary" placeholder="Brief description"><div class="hint">One line shown under the intervention name in the list.</div></div>
+        <div class="fg"><label>Section</label><input type="text" id="iv-section" placeholder="e.g. Pain Management"><div class="hint">Use an existing section name to add to it, or type a new one to create it.</div></div>
+      </div>
+      <div id="tab-content" style="display:none">
+        <div class="rte-bar">
+          <div class="rte-grp">
+            <select class="rsel" onchange="rfmt('formatBlock',this.value);this.blur()">
+              <option value="p">Paragraph</option>
+              <option value="h2">Heading 1</option>
+              <option value="h3">Heading 2</option>
+              <option value="h4">Heading 3</option>
+            </select>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('bold')" title="Bold"><strong>B</strong></button>
+            <button class="rbtn" onclick="rfmt('italic')" title="Italic"><em>I</em></button>
+            <button class="rbtn" onclick="rfmt('underline')" title="Underline"><u>U</u></button>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('insertUnorderedList')" title="Bullet list"><svg viewBox="0 0 20 20"><path d="M4 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
+            <button class="rbtn" onclick="rfmt('insertOrderedList')" title="Numbered list"><svg viewBox="0 0 20 20"><path d="M3 5h2V4H4V3H3v2zm0 4h2V8H4V7H3v2zM3 13h2v-1H4v-1H3v2zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
+            <button class="rbtn" onclick="rInsertTable()" title="Insert table"><svg viewBox="0 0 20 20"><path d="M3 3h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v3h4V5H4zm0 5v3h4v-3H4zm0 5v1h4v-1H4zm6-10v3h6V5h-6zm0 5v3h6v-3h-6zm0 5v1h6v-1h-6z"/></svg></button>
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rInsertImage()" title="Insert image">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm2 0v7.5l3-2.5 3 4 2-2.5 3 3V4H4zm0 12h12v-1.5l-3-3-2 2.5-3-4-4 3.5V16z"/></svg>
+            </button>
+            <input type="file" id="rte-img-input" accept="image/*" style="display:none" onchange="rHandleImageFile(event)">
+          </div>
+          <div class="rte-grp">
+            <button class="rbtn" onclick="rfmt('removeFormat')" title="Clear formatting" style="font-size:10px;font-weight:700">Tx</button>
+          </div>
+        </div>
+        <div class="rte" id="rte" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeIvModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveIv()">Save Intervention</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISUAL AID PHASE MODAL -->
+<div class="modal-over" id="visual-aid-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="va-modal-title">Add Visual Aid</div>
+      <button class="modal-close" onclick="closeVaModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>Title</label>
+        <input type="text" id="va-title" placeholder="e.g. Regional Block Diagram, Fluid Algorithm">
+        <div class="hint">Shown as the phase name in the navigation.</div>
+      </div>
+      <div class="fg">
+        <label>Image</label>
+        <div id="va-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s" onclick="$('va-img-input').click()" ondragover="vaDragOver(event)" ondragleave="vaDragLeave(event)" ondrop="vaDropFile(event)">
+          <div style="font-size:28px;margin-bottom:6px">🖼️</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px">Drop image here or click to browse</div>
+          <div style="font-size:11px;color:var(--muted)">PNG, JPG, GIF, WebP — stored as base64 in the protocol data</div>
+          <input type="file" id="va-img-input" accept="image/*" style="display:none" onchange="vaHandleFile(event)">
+        </div>
+        <div id="va-preview" style="display:none;margin-top:12px;text-align:center">
+          <img id="va-preview-img" style="max-width:100%;max-height:260px;border-radius:10px;border:1.5px solid var(--border);object-fit:contain">
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px">
+            <span id="va-preview-name" style="font-size:12px;color:var(--muted)"></span>
+            <button onclick="clearVaImage()" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:12px;font-weight:700">Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Caption <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--muted)">(optional)</span></label>
+        <input type="text" id="va-caption" placeholder="e.g. Abdominal wall nerve block positions (Peter Hebbard, 2008)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeVaModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveVaPhase()">Save Visual Aid</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROTOCOL MODAL -->
+<div class="modal-over" id="add-proto-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr">
+      <div class="modal-title">Add Protocol</div>
+      <button class="modal-close" onclick="closeAddProtoModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Mode tabs -->
+      <div class="tabs" style="margin-bottom:20px">
+        <button class="tab active" id="proto-tab-upload" onclick="switchProtoTab('upload',this)">📄 Upload Document</button>
+        <button class="tab" id="proto-tab-manual" onclick="switchProtoTab('manual',this)">✏️ Create Manually</button>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div id="proto-upload-pane">
+        <div id="upload-idle">
+          <div style="border:2px dashed var(--border);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s" id="drop-zone" onclick="$('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+            <div style="font-size:32px;margin-bottom:8px">📂</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Drop your document here</div>
+            <div style="font-size:12px;color:var(--muted)">PDF or Word (.docx) — or click to browse</div>
+            <input type="file" id="file-input" accept=".pdf,.docx,.doc" style="display:none" onchange="handleFileSelect(event)">
+          </div>
+          <div id="file-chosen" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(66,192,245,.08);border:1.5px solid var(--sky);border-radius:10px;font-size:13px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📄</span>
+            <div style="flex:1">
+              <div id="file-chosen-name" style="font-weight:700;color:var(--text)"></div>
+              <div id="file-chosen-size" style="font-size:11px;color:var(--muted)"></div>
+            </div>
+            <button onclick="clearFile()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px">×</button>
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;background:#f7f9fc;border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6;border:1.5px solid var(--border)">
+            <strong style="color:var(--text)">How it works:</strong> Claude reads your document and automatically extracts interventions, dosing, and protocols — structured into preoperative, intraoperative, and postoperative phases, exactly like the existing protocols.
+          </div>
+        </div>
+
+        <!-- Processing state -->
+        <div id="upload-processing" style="display:none;text-align:center;padding:32px 20px">
+          <div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--indigo);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px"></div>
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">Analysing document…</div>
+          <div style="font-size:12px;color:var(--muted)" id="processing-status">Reading document content</div>
+        </div>
+
+        <!-- Result preview -->
+        <div id="upload-result" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:20px">✅</span>
+            <div style="font-weight:700;color:var(--success);font-size:14px">Protocol extracted successfully</div>
+          </div>
+          <div style="background:#f7f9fc;border:1.5px solid var(--border);border-radius:12px;padding:14px;font-size:12px;max-height:220px;overflow-y:auto" id="result-preview"></div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">Review the summary above, then click <strong>Add Protocol</strong> to save it. You can edit any details afterwards in the editor.</div>
+        </div>
+
+        <!-- Error state -->
+        <div id="upload-error" style="display:none;padding:14px;background:rgba(239,68,68,.07);border:1.5px solid var(--danger);border-radius:10px;font-size:13px;color:var(--danger)" id="upload-error-msg"></div>
+      </div>
+
+      <!-- MANUAL TAB -->
+      <div id="proto-manual-pane" style="display:none">
+        <div class="fg"><label>Protocol Name</label><input type="text" id="manual-proto-name" placeholder="e.g. Thoracic"></div>
+        <div class="fg"><label>Description</label><input type="text" id="manual-proto-desc" placeholder="e.g. Vanderbilt — Thoracic Surgery ERAS Protocol"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeAddProtoModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="add-proto-btn" onclick="confirmAddProtocol()">Add Protocol</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIMPLE INPUT MODAL (section, phase) -->
+<div class="modal-over" id="inp-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="inp-title">Add</div>
+      <button class="modal-close" onclick="closeInpModal()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label id="inp-label">Name</label><input type="text" id="inp-val" placeholder=""></div>
+      <div class="fg" id="inp-desc-fg" style="display:none"><label>Description</label><input type="text" id="inp-desc" placeholder=""></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeInpModal()">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="inp-ok">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-over" id="settings-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div class="modal-title">Database Settings</div>
+      <button class="modal-close" onclick="closeSettings()"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Enter your JSONBin credentials. These are saved in your browser and never sent anywhere except JSONBin's API.</p>
+      <div class="fg">
+        <label>Bin ID</label>
+        <input type="text" id="settings-bin-id" placeholder="e.g. 69bc7308aa77b81da9fe106f">
+      </div>
+      <div class="fg">
+        <label>Master Key</label>
+        <input type="text" id="settings-api-key" placeholder="$2a$10$...">
+        <div class="hint">Copy this directly from jsonbin.io → Account → API Keys using the copy button.</div>
+      </div>
+      <div class="fg">
+        <label>Anthropic API Key <span style="background:rgba(111,107,215,.1);color:var(--indigo);font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;letter-spacing:.3px">FOR DOCUMENT UPLOAD</span></label>
+        <input type="text" id="settings-anthropic-key" placeholder="sk-ant-...">
+        <div class="hint">Required for PDF/Word upload parsing. Get yours at <a href="https://console.anthropic.com" target="_blank" style="color:var(--indigo)">console.anthropic.com</a> → API Keys. Stored in your browser only.</div>
+      </div>
+      <div class="fg">
+        <label>ImgBB API Key <span style="background:rgba(16,185,129,.1);color:var(--success);font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;letter-spacing:.3px">FOR IMAGE UPLOAD</span></label>
+        <input type="text" id="settings-imgbb-key" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+        <div class="hint">Required for visual aid and RTE image uploads. Free key at <a href="https://api.imgbb.com" target="_blank" style="color:var(--indigo)">api.imgbb.com</a> → Get API Key. Images hosted permanently on ImgBB.</div>
+      </div>
+      <div id="settings-test-result" style="display:none;margin-top:12px;padding:10px 14px;border-radius:9px;font-size:13px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="testConnection()">Test Connection</button>
+      <button class="btn btn-sm" style="background:rgba(16,185,129,.1);border:1.5px solid var(--success);color:var(--success)" onclick="seedDatabase()">Seed Database</button>
+      <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+  <div class="topbar-titles">
+    <div class="topbar-title">ERAS Protocol Editor</div>
+    <div class="topbar-sub">VANDERBILT UNIVERSITY</div>
+  </div>
+  <div class="topbar-acts">
+    <span id="status-badge" class="status ok"><span class="status-dot"></span><span id="status-txt">Ready</span></span>
+    <button class="btn btn-ghost btn-sm" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="saveToDB()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save to DB
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export JSON
+    </button>
+    <button class="btn btn-white btn-sm" onclick="saveViewer()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.95 5.95l.96-.96a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Save &amp; Download Viewer
+    </button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;stroke:#fff;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+  <div class="topbar-titles">
+    <div class="topbar-title">ERAS Protocol Editor</div>
+    <div class="topbar-sub">VANDERBILT UNIVERSITY</div>
+  </div>
+  <div class="topbar-acts">
+    <span id="status-badge" class="status ok"><span class="status-dot"></span><span id="status-txt">Ready</span></span>
+    <button class="btn btn-ghost btn-sm" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke:currentColor;fill:none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="saveToFile()">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke:currentColor;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save protocols.json
+    </button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-label">Protocols</div>
+      <button class="btn btn-primary btn-xs" onclick="openAddProtocol()">+ Add</button>
+    </div>
+    <div class="sb-scroll" id="sb-nav"></div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ── LOCAL FILE DATABASE ───────────────────────────────────────────────────────
+// Protocols are stored in protocols.json in the same folder as these HTML files.
+// The editor downloads an updated protocols.json whenever you click "Save".
+// The viewer reads protocols.json on load (falling back to baked-in seed).
+
+const SEED = {"protocols":[{"id":1,"name":"Colorectal","description":"Vanderbilt University — Anesthesia Practice Standardization Protocol v12.2017","phases":{"preoperative":{"Medications":[{"name":"Gabapentin","summary":"100–300 mg PO 1 hr before OR; reduce for age >65, OSA","content":"<h2>Gabapentin</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li><strong>100–300 mg PO</strong> 1 hour before OR time</li><li>Reduce to <strong>100 mg</strong> if &gt;65y</li><li>Consider omitting or 100 mg if &gt;75y</li><li>Dose reduction for OSA patients</li></ul>"},{"name":"Acetaminophen (Tylenol)","summary":"1000 mg PO 1 hr before OR; reduce to 650 mg if <70 kg","content":"<h2>Acetaminophen (Tylenol)</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li><strong>1000 mg PO</strong> 1 hour before OR time</li><li>Reduce to <strong>650 mg PO</strong> if &lt;70 kg</li><li>Do not use if history of liver disease</li></ul>"},{"name":"PONV Prophylaxis — Preoperative","summary":"TIVA preferred; scopolamine patch only if >3 risk factors and hx of PONV","content":"<h2>PONV Prophylaxis — Preoperative</h2><p><strong>*TIVA preferred</strong> for all colorectal patients.</p><ul><li>Scopolamine patch if &gt;3 Apfel risk factors — only if hx of PONV or motion sickness</li><li>Do NOT use if &gt;65y with OSA, dementia, or anticholinergic use</li></ul><p>See PONV Guidelines on CEBA Website.</p>"}]},"regional anesthesia":{"Blocks":[{"name":"TAP Block — Mini-Lap / Hand-Assisted","summary":"Bilateral TAP ± rectus sheath; ropivacaine 0.25% + dexamethasone","content":"<h2>Regional Anesthesia — Mini-Lap or Hand-Assisted Laparoscopy</h2><h3>Pfannenstiel Incision</h3><ul><li>Bilateral TAP Blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>25–30 mL/side</strong></li></ul><h3>Periumbilical Incision</h3><ul><li>Bilateral TAP + Bilateral Rectus Sheath blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>2 mg</strong> — <strong>10–15 mL/side</strong></li></ul>"},{"name":"TAP Block — Ostomy Takedown / Creation","summary":"Unilateral TAP block; ropivacaine 0.25% + dexamethasone 4 mg, 25–30 mL","content":"<h2>Regional Anesthesia — Ostomy Takedown / Creation</h2><ul><li>Unilateral TAP Block</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>25–30 mL</strong></li></ul>"},{"name":"TAP Block — Laparotomy","summary":"Bilateral TAP + rectus sheath; thoracic epidural if incision above T8","content":"<h2>Regional Anesthesia — Laparotomy</h2><ul><li>Bilateral TAP + Bilateral Rectus Sheath blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>2 mg</strong> — <strong>10–15 mL/side</strong></li></ul><div style='margin-top:12px;padding:10px 14px;background:rgba(111,107,215,0.07);border-left:3px solid #6F6BD7;border-radius:0 8px 8px 0;'><strong>Thoracic Epidural:</strong> Place if incision extends above T8. Discuss with surgeon before planning.</div>"}]},"intraoperative":{"Anesthesia":[{"name":"TIVA with Propofol","summary":"***TIVA preferred*** — avoid volatile unless propofol allergy","content":"<h2>TIVA with Propofol</h2><p>Use <strong>propofol infusion</strong> as the primary anesthetic agent. Please avoid volatile agents unless the patient has a propofol allergy.</p>"},{"name":"Opioid Minimization","summary":"No induction opioids; ketamine + esmolol for HR control","content":"<h2>Opioid Minimization</h2><ul><li><strong>No induction opioids</strong></li><li>Propofol or volatile anesthetic + ketamine</li><li><strong>Esmolol</strong> for heart rate control</li></ul>"},{"name":"Ketamine","summary":"0.5 mg/kg bolus + 5 mcg/kg/min until fascia closure","content":"<h2>Ketamine — Intraoperative</h2><ul><li><strong>0.5 mg/kg IV bolus</strong> with induction</li><li><strong>5 mcg/kg/min</strong> after induction until fascia closure</li><li>Reduce bolus to <strong>0.25 mg/kg</strong> in patients &gt;65y</li></ul>"},{"name":"Lidocaine Infusion","summary":"1.5 mg/kg bolus then 2 mg/min drip to case end; restart in PACU","content":"<h2>Lidocaine Infusion — Intraoperative</h2><ul><li><strong>1.5 mg/kg bolus</strong> at induction, then <strong>2 mg/min drip</strong> to case end</li><li>Continues in PACU per postop order set</li></ul><h3>Contraindications</h3><ul><li>Unstable heart disease, Recent MI, Heart block, Heart Failure</li><li>Electrolyte disturbances, Liver disease, Seizure disorder</li><li>Current anti-arrhythmic therapy (amiodarone, sotalol)</li></ul>"},{"name":"Ketorolac","summary":"30 mg IV at fascia closure; reduce to 15 mg if >65y, CrCl<30, or <50 kg","content":"<h2>Ketorolac — Intraoperative</h2><ul><li><strong>30 mg IV</strong> at fascia closure</li><li>Reduce to <strong>15 mg IV</strong> if &gt;65y, CrCl &lt;30, or weight &lt;50 kg</li><li>Consider avoiding with history of renal dysfunction or GI bleed</li></ul>"},{"name":"Methadone","summary":"Assess at emergence; 5 mg IV boluses q5–10 min if opioids needed","content":"<h2>Methadone</h2><p>Assess at emergence for need. Majority of patients do <strong>not</strong> require intraoperative opioids.</p><ul><li>If needed: <strong>5 mg IV boluses</strong> q5–10 min on emergence or in PACU</li></ul>"}],"PONV Prophylaxis":[{"name":"PONV Prophylaxis — Intraoperative","summary":"Dexamethasone 8 mg post-induction; ondansetron 4 mg 30 min pre-emergence","content":"<h2>PONV Prophylaxis — Intraoperative</h2><ul><li><strong>Dexamethasone</strong>: 8 mg IV after induction (unless given in TAP blocks)</li><li><strong>Ondansetron</strong>: 4 mg IV 30 min prior to emergence</li></ul>"}],"Fluid & Hemodynamic Management":[{"name":"Intraoperative Fluid Strategy","summary":"LR/Plasma-Lyte only; SV-guided via Clearsight; 3 mL/kg/hr maintenance","content":"<h2>Intraoperative Fluid Strategy</h2><ul><li><strong>LR or Plasma-Lyte only</strong> — NO NORMAL SALINE</li><li>Do not replace deficit empirically</li><li>250 mL bolus after induction; repeat if delta SV &gt;+10%</li><li>Maintenance: <strong>3 mL/kg/hr</strong></li><li>MAP &lt;75 or &gt;10% below baseline + euvolemia → phenylephrine up to 0.5 mcg/kg/min</li><li>Target UOP ≥0.5 mL/kg/hr</li></ul>"}],"NO BUGS (SSI Reduction)":[{"name":"Normothermia","summary":"Goal core temp >36.0°C; forced air warming from holding room","content":"<h2>Normothermia</h2><p><strong>Goal:</strong> Core temp &gt;36.0°C</p><ul><li>Forced air warming beginning in the <strong>holding room</strong></li><li>Warm all IV fluids; warm room if T &lt;36.0°C</li></ul>"},{"name":"Oxygenation / Tidal Volume","summary":"FiO₂ ≥0.8, TV 8 mL/kg IBW, PEEP ≥6 cmH₂O throughout","content":"<h2>Oxygenation / Tidal Volume</h2><ul><li><strong>FiO₂ ≥ 0.8</strong> with TV <strong>8 mL/kg IBW</strong> + PEEP ≥6 cmH₂O</li><li>Nasal cannula in PACU to maintain SaO₂ 100%</li><li>NC @ 2 L/min prior to PACU discharge and 24 hrs postop</li></ul>"},{"name":"Glucose Control","summary":"Goal 140–180 mg/dL; FSBG preop on all colorectal patients","content":"<h2>Glucose Control</h2><p><strong>Goal: 140–180 mg/dL.</strong> Do NOT give dextrose unless glucose &lt;60.</p><ul><li>Check FSBG preop on all colorectal patients</li><li>Diabetic: check q1hr intraop</li><li>Non-diabetic ≥120 preop: recheck after 1 hr; if still ≥120, q1hr intraop</li></ul>"},{"name":"Antibiotics","summary":"Proper drug/dose/timing (<1 hr of incision); re-dose per protocol","content":"<h2>Antibiotics</h2><ul><li>Proper drug, dose, timing (&lt;1 hr of incision), and re-dosing strategy</li><li>See antibiotic dosing chart in VPIMS. OR Pharmacy: 2-4897</li></ul>"}]},"postoperative":{"Pain Management":[{"name":"Thoracic Epidural","summary":"Bupivacaine 0.1% + hydromorphone 10 mcg/mL; remove at bowel function return","content":"<h2>Thoracic Epidural — Postoperative</h2><ul><li>Bupivacaine <strong>0.1%</strong> + hydromorphone <strong>10 mcg/mL</strong></li><li>Remove day prior to anticipated discharge</li><li>Remove once patient has <strong>flatus or return of bowel function</strong></li></ul>"},{"name":"Ketamine Infusion","summary":"2.5 mcg/kg/min × 48 hrs; requires 2nd IV + NS carrier at 10 cc/hr","content":"<h2>Ketamine Infusion — Postoperative</h2><ul><li><strong>2.5 mcg/kg/min</strong> × <strong>48 hours</strong> (high concentration bag — not continued from OR)</li><li>Requires 2nd IV + NS carrier at 10 cc/hr</li><li>Max weight: 100 kg</li></ul><h3>Contraindications</h3><ul><li>Increased ICP, history of PTSD or psychotic states, increased IOP</li></ul>"},{"name":"Lidocaine Infusion","summary":"Continue 24 hrs postop; weight-based: <70 kg→1 mg/min, 70–100→1.5, >100→2","content":"<h2>Lidocaine Infusion — Postoperative</h2><p>Continue for <strong>24 hours</strong> from PACU or after TEC removed.</p><table><tr><th>Weight</th><th>Dose</th></tr><tr><td>&lt;70 kg</td><td>1 mg/min IV</td></tr><tr><td>70–100 kg</td><td>1.5 mg/min IV</td></tr><tr><td>&gt;100 kg</td><td>2 mg/min IV</td></tr></table>"},{"name":"Gabapentin","summary":"300–600 mg PO q8h POD0 to discharge; continue ×14 days at home","content":"<h2>Gabapentin — Postoperative</h2><ul><li><strong>300–600 mg PO q8h</strong> starting POD0 until discharge</li><li>Lower dose for &gt;65y or significant sedation/dizziness</li><li>Discharge: continue ×<strong>14 days</strong>; taper if on &gt;300 mg q8h</li></ul>"},{"name":"Acetaminophen","summary":"1000 mg PO q8h POD0 to discharge (max 4000 mg/day)","content":"<h2>Acetaminophen — Postoperative</h2><ul><li><strong>1000 mg PO q8h</strong> POD0 to discharge (max 4000 mg/24 hrs)</li><li>Reduce to <strong>650 mg q6h</strong> if &lt;70 kg</li></ul>"},{"name":"Ketorolac","summary":"30 mg IV q6h ×3 days; reduce to 15 mg if >65y, CrCl<30, or <50 kg","content":"<h2>Ketorolac — Postoperative</h2><ul><li><strong>30 mg IV q6h × 3 days</strong></li><li>Reduce to 15 mg if &gt;65y, CrCl &lt;30, or weight &lt;50 kg</li></ul>"},{"name":"Opioid PRN","summary":"Tramadol 50 mg q4h (no SSRI/SNRI); oxycodone 5 mg; hydromorphone IV breakthrough","content":"<h2>Opioid PRN</h2><p>Use lowest possible dose and frequency.</p><ul><li>Tramadol 50 mg q4h PRN — <strong>do not use with SSRI/SNRI</strong></li><li>Oxycodone 5 mg PO q4h PRN</li><li>Hydromorphone 0.25 mg IV q4h PRN (opioid naïve or &gt;65y); 0.5 mg if tolerant</li></ul><h3>Discharge</h3><ul><li>PRN q6h × 3–5 days (12 pills total); tramadol preferred (Schedule IV)</li></ul>"}],"PONV Treatment":[{"name":"Ondansetron","summary":"4 mg IV/PO q6h PRN — first line","content":"<h2>Ondansetron</h2><p><strong>First line.</strong> 4 mg IV/PO q6h PRN.</p>"},{"name":"Haloperidol","summary":"0.5–1 mg IV PRN — second line","content":"<h2>Haloperidol</h2><p>0.5–1 mg IV PRN.</p>"},{"name":"Promethazine","summary":"6.25–12.5 mg IV/PO PRN — ensure patent IV before injecting","content":"<h2>Promethazine</h2><ul><li>6.25–12.5 mg IV/PO PRN</li><li><strong>Ensure patent IV</strong> prior to injection — extravasation causes serious tissue injury</li></ul>"}],"Diet & Fluids":[{"name":"Diet Advancement","summary":"Full Liquids Plus on POD 1 (surgical team orders)","content":"<h2>Diet Advancement</h2><p>Advance to <strong>Full Liquids Plus</strong> on POD 1 — orders by surgical team.</p>"},{"name":"IV Fluid Reduction","summary":"IVF to 50 cc/hr on POD 1 (surgical team orders)","content":"<h2>IV Fluid Reduction</h2><p>Reduce IVF to <strong>50 cc/hr</strong> on POD 1 — orders by surgical team.</p>"}]}}},{"id":2,"name":"Bariatric","description":"Vanderbilt University — Weight Reduction Surgery ERAS Protocol v2.2019","phases":{"preoperative":{"Assessment":[{"name":"Pain History Assessment","summary":"Thorough pain history: opioids, CSMD verification, sites, psych history","content":"<h2>Pain History Assessment</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li>Current opioid and non-opioid pain medications</li><li>Current opioid provider + <strong>CSMD verification</strong></li><li>Sites of pain and baseline pain scores</li><li>Previous interventions and efficacy</li><li>Co-morbid psychiatric conditions and medications</li></ul>"}],"Medications":[{"name":"Gabapentin","summary":"100–300 mg PO 1 hr before OR; higher dose if opioid-dependent (if safe)","content":"<h2>Gabapentin — Preoperative</h2><ul><li><strong>100–300 mg PO</strong> 1 hr before OR</li><li>Reduce to 100 mg if &gt;65y; consider omitting if &gt;75y</li><li>Dose reduction for OSA or renal dysfunction</li><li>Consider higher dose for opioid-dependent patients (if no sedation risk)</li><li>Patients on home gabapentin: ensure 100–200% of home dose taken AM of surgery</li></ul>"},{"name":"Acetaminophen","summary":"1000 mg PO night before + 1000 mg PO 1 hr before OR","content":"<h2>Acetaminophen — Preoperative</h2><ul><li>1000 mg PO <strong>night before surgery</strong> (managed by bariatric surgery team)</li><li><strong>1000 mg PO</strong> 1 hr before OR</li><li>Do not use if Child Class C liver disease</li></ul>"},{"name":"PONV Prophylaxis","summary":"TIVA preferred; no routine scopolamine; agents = # of risk factors","content":"<h2>PONV Prophylaxis — Preoperative</h2><p><strong>*TIVA preferred</strong> for bariatric patients. # of PONV agents = # of risk factors.</p><ul><li><strong>No routine scopolamine</strong> — only for 4 Apfel risk factors with hx of PONV</li><li>Do NOT use if &gt;65y with OSA/dementia or anticholinergic use</li></ul>"}],"Fluids":[{"name":"Carbohydrate Loading","summary":"Two 12 oz electrolyte + carb drinks morning of surgery (≤2 hrs before OR)","content":"<h2>Carbohydrate Loading</h2><p><em>Managed by Bariatric Surgery Team at pre-op visit</em></p><ul><li><strong>Two 12 oz electrolyte + carbohydrate clear liquid drinks</strong> morning of surgery</li><li>Up to <strong>2 hours before surgery</strong></li><li>Extend to 4 hours prior if advanced diabetes/gastroparesis</li></ul>"}]},"regional anesthesia":{"Blocks":[{"name":"Regional Block — Gastric Sleeve","summary":"Bilateral RS block + RIGHT oblique subcostal TAP (position 3 or 4)","content":"<h2>Regional Anesthesia — Gastric Sleeve</h2><h3>Block 1 — Bilateral Rectus Sheath</h3><ul><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>20–30 mL/side</strong></li></ul><h3>Block 2 — RIGHT Oblique Subcostal TAP (OSTAP)</h3><ul><li>Goal: perform in <strong>position 3 or 4</strong></li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>30 mL</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>"},{"name":"Regional Block — Gastric Bypass","summary":"Bilateral rectus sheath blocks only; 20–30 mL/side","content":"<h2>Regional Anesthesia — Gastric Bypass</h2><ul><li>Bilateral Rectus Sheath Blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>20–30 mL/side</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>"},{"name":"Regional Block — Gastric Bypass (Dr. English)","summary":"Bilateral RS + LEFT oblique subcostal TAP (position 4); 15–30 mL each","content":"<h2>Regional Anesthesia — Gastric Bypass (Dr. English)</h2><h3>Block 1 — Bilateral Rectus Sheath</h3><ul><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>15–30 mL/side</strong></li></ul><h3>Block 2 — LEFT Oblique Subcostal TAP (OSTAP)</h3><ul><li>Goal: <strong>position 4</strong></li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>15–30 mL</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>"},{"name":"Regional Block — Full Laparotomy (Rare)","summary":"Thoracic epidural placement by Perioperative Service","content":"<h2>Regional Anesthesia — Full Laparotomy (Rare)</h2><p>Thoracic Epidural Placement by Perioperative Service.</p>"}]},"intraoperative":{"Anesthesia":[{"name":"TIVA with Propofol + BIS","summary":"25–75 mcg/kg/min adjunct or 200 mcg/kg/min full TIVA; BIS monitor required without volatile","content":"<h2>TIVA with Propofol</h2><ul><li>Adjunct to volatile: <strong>25–75 mcg/kg/min</strong></li><li>Full TIVA: <strong>200 mcg/kg/min</strong></li><li>Use <strong>BIS monitor</strong> without volatile agent</li><li>If on ≥1.3 MAC volatile: contact attending</li></ul>"},{"name":"Opioid Minimization","summary":"No induction opioids; ketamine + lidocaine; esmolol for HR control","content":"<h2>Opioid Minimization</h2><ul><li><strong>No induction opioids</strong></li><li>Propofol + ketamine + lidocaine</li><li><strong>Esmolol</strong> for heart rate control</li></ul>"},{"name":"Ketamine","summary":"0.5 mg/kg → 5 mcg/kg/min until fascia closed → 2.5 mcg/kg/min until emergence","content":"<h2>Ketamine — Intraoperative</h2><p>Use <strong>low concentration bag</strong> (100 mg/100 cc).</p><ul><li><strong>0.5 mg/kg IV bolus</strong> at induction</li><li><strong>5 mcg/kg/min</strong> until fascia closed</li><li><strong>2.5 mcg/kg/min</strong> until emergence</li><li>Reduce bolus to 0.25 mg/kg if &gt;65y</li></ul>"},{"name":"Lidocaine Infusion","summary":"1.5 mg/kg bolus then 2 mg/min to case end; restart in PACU","content":"<h2>Lidocaine Infusion</h2><ul><li><strong>1.5 mg/kg bolus</strong> + <strong>2 mg/min drip</strong> to case end</li><li>Restart in PACU per postop order set</li></ul>"},{"name":"Methadone","summary":"Opioid exposed (1–60 MED) or tolerant (>60 MED): 5–10 mg IV after induction, max 20 mg","content":"<h2>Methadone</h2><p>Most patients do <strong>not</strong> require intraoperative opioids.</p><ul><li>Opioid exposed (1–60 MED) or tolerant (&gt;60 MED): <strong>5–10 mg IV after induction</strong>, max <strong>20 mg</strong></li><li>Otherwise: assess at emergence; 5 mg IV boluses q5–10 min PRN</li></ul>"},{"name":"PONV Prophylaxis — Intraoperative","summary":"Dexamethasone 8 mg; ondansetron 4 mg 30 min pre-emergence; haloperidol 1 mg at skin closure","content":"<h2>PONV Prophylaxis — Intraoperative</h2><ul><li><strong>Dexamethasone</strong>: 8 mg IV after induction (unless in TAP blocks)</li><li><strong>Ondansetron</strong>: 4 mg IV 30 min before emergence</li><li><strong>Haloperidol</strong>: 1 mg IV at skin closure (0.5 mg if &gt;65y) — do not give with known QTc prolongation — <strong>current vial 5 mg/mL: BE CAREFUL</strong></li></ul>"}],"Fluid & Hemodynamic Management":[{"name":"Intraoperative Fluid Strategy","summary":"LR/Plasma-Lyte only; 2–3 mL/kg/hr; norepinephrine preferred; median ~1600 mL","content":"<h2>Fluid Strategy</h2><ul><li><strong>LR or Plasma-Lyte/Normosol only</strong> — NO NORMAL SALINE</li><li>Maintenance: <strong>2–3 mL/kg/hr</strong> + boluses per clinical course</li><li><strong>Norepinephrine</strong> preferred vasopressor (2–10 mcg/min via peripheral IV)</li><li>Median case IVF: ~<strong>1600 mL</strong></li><li>Target UOP ≥0.5 mL/kg/hr if Foley present</li></ul>"}]},"postoperative":{"Pain Management":[{"name":"NSAIDs — Avoid","summary":"Should be avoided; only consider if all multimodal has failed and opioid sedation present","content":"<h2>NSAIDs — Bariatric Patients</h2><p>NSAIDs <strong>should be avoided</strong>. Consider only after all multimodal options have failed and patient has opioid-related sedation. Surgical attending discussion required.</p>"},{"name":"Lidocaine Infusion","summary":"24 hrs postop: <70 kg→1 mg/min, 70–100→1.5 (~20 cc/hr), >100→2 mg/min (~30 cc/hr)","content":"<h2>Lidocaine Infusion — Postoperative</h2><p><strong>24 hours</strong> postop (can extend based on pain/PO intake).</p><table><tr><th>Weight</th><th>Dose</th><th>Rate</th></tr><tr><td>&lt;70 kg</td><td>1 mg/min IV</td><td>~15 cc/hr</td></tr><tr><td>70–100 kg</td><td>1.5 mg/min IV</td><td>~20 cc/hr</td></tr><tr><td>&gt;100 kg</td><td>2 mg/min IV</td><td>~30 cc/hr</td></tr></table>"},{"name":"Gabapentin","summary":"300–600 mg PO q8h POD0; renally adjusted; continue ×14 days at discharge","content":"<h2>Gabapentin — Postoperative</h2><ul><li><strong>300–600 mg PO q8h</strong> POD0 to discharge</li><li>Lower dose for &gt;65y or sedation/dizziness</li></ul><table><tr><th>CrCl</th><th>Dose</th></tr><tr><td>&gt;60 mL/min</td><td>300–1200 mg TID</td></tr><tr><td>30–59 mL/min</td><td>200–700 mg BID</td></tr><tr><td>15–29 mL/min</td><td>200–700 mg daily</td></tr><tr><td>&lt;15 mL/min</td><td>100–300 mg daily</td></tr><tr><td>ESRD/HD</td><td>Per CrCl + 125–250 mg after dialysis</td></tr></table>"},{"name":"Acetaminophen","summary":"1000 mg PO q8h POD0 to discharge; 500 mg q8h for liver disease","content":"<h2>Acetaminophen — Postoperative</h2><ul><li><strong>1000 mg PO q8h</strong> POD0 to discharge (max 4000 mg/day)</li><li><strong>500 mg q8h</strong> for liver disease; avoid if Child Class C</li></ul>"},{"name":"Opioid PRN","summary":"Tramadol first line; oxycodone second; hydromorphone IV for breakthrough only","content":"<h2>Opioid PRN</h2><h3>Opioid-Naive</h3><ul><li><strong>Tramadol</strong> 50–100 mg q4–6h PRN (caution with SSRI/SNRI/TCAs)</li><li><strong>Oxycodone</strong> 5 mg PO q4h PRN &gt;5/10</li><li><strong>Hydromorphone</strong> IV PRN only if not controlled by other modalities</li></ul><h3>Chronic Opioid Therapy</h3><p>Ensure meeting <strong>100–125% of home oral dose</strong>. Perioperative Service should be involved.</p>"},{"name":"Rescue Plan — Suboptimal Analgesia","summary":"4-step rescue: H&P → severity → pain type → rescue treatment","content":"<h2>Rescue Plan for Suboptimal Analgesia</h2><table><tr><th>Step</th><th>Action</th><th>Details</th></tr><tr><td><strong>1</strong></td><td>Focused H&amp;P</td><td>Preop analgesia, baseline pain, postop exam — location &amp; etiology</td></tr><tr><td><strong>2</strong></td><td>Assess Severity</td><td>Location, severity, duration, aggravating factors; functional limitations; adverse drug events</td></tr><tr><td><strong>3</strong></td><td>Pain Type</td><td>Neuropathic, inflammatory, visceral, or somatic? Exclude surgical complications first.</td></tr><tr><td><strong>4</strong></td><td>Rescue Treatment</td><td>Confirm all non-opioid options used. Add opioid PO if tolerated, IV if needed.</td></tr></table>"}],"PONV Treatment":[{"name":"PONV Ladder","summary":"Ondansetron (1st) → haloperidol (2nd) → scopolamine (3rd) → promethazine (4th)","content":"<h2>PONV Treatment Ladder</h2><table><tr><th>Line</th><th>Agent</th><th>Dose</th></tr><tr><td>1st</td><td>Ondansetron</td><td>4 mg IV/PO q6h PRN</td></tr><tr><td>2nd</td><td>Haloperidol</td><td>0.5–1 mg IV q4–6h PRN</td></tr><tr><td>3rd</td><td>Scopolamine patch</td><td>Only if active PONV despite above</td></tr><tr><td>4th</td><td>Promethazine</td><td>6.25–12.5 mg IV/PO q4h PRN (ensure patent IV)</td></tr></table><p>Re-consult Periop Service if uncontrolled. Alternatives: dronabinol (avoid &gt;65y), dexamethasone (discuss with surgery), aprepitant (pharmacy approval needed).</p>"}],"Post-Discharge":[{"name":"Discharge Opioid Plan","summary":"Taper 30–50% by day 3 post-discharge; if no opioid use 24 hrs pre-discharge → 3-pill rescue only","content":"<h2>Discharge Opioid Plan</h2><p>Follow <strong>TN Together Opioid Prescribing Guidelines</strong>. Prescribe the opioid used in hospital.</p><ul><li>Tramadol 50–100 mg q6h PRN (Schedule IV, refillable by phone; no SSRI/SNRI/TCAs)</li><li>Oxycodone 5 mg q6h PRN (second line)</li><li>Taper ~<strong>30–50% by 3 days</strong> post-discharge, then off</li><li>If no opioid use 24 hrs before discharge → <strong>3-pill rescue pack only</strong></li></ul>"},{"name":"Discharge Multimodal Medications","summary":"Acetaminophen max 3 g/day ×3 days; gabapentin ×14 days; muscle relaxants/alpha-2 ×7 days PRN","content":"<h2>Discharge Multimodal Medications</h2><ul><li><strong>Acetaminophen</strong>: max 3 g/day × 3 days</li><li><strong>Gabapentin</strong>: × 14 days (taper if on &gt;300 mg q8h)</li><li><strong>Muscle relaxants</strong>: PRN × 7 days</li><li><strong>Alpha-2 agonists</strong>: PRN × 7 days or until off opioids</li></ul><h3>Discharge Nausea</h3><ul><li>Ondansetron 4 mg ODT q6h PRN</li><li>Promethazine PO 12.5 mg q4h PRN</li><li>Scopolamine patch if persisting</li></ul>"}]}}}]};
+
+function loadProtocols() {
+  return fetch('./protocols.json')
+    .then(function(r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+    .then(function(data) {
+      return (data && data.protocols) ? data.protocols : [];
+    })
+    .catch(function() {
+      return JSON.parse(JSON.stringify(SEED.protocols || []));
+    });
+}
+
+function saveToFile() {
+  // Downloads an updated protocols.json — replace the one in your folder
+  const data = JSON.stringify({ protocols: protocols }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'protocols.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('protocols.json downloaded — replace the file in your ERAS folder');
+  setStatus('ok', 'Saved');
+}
+
+function exportJSON() { saveToFile(); }  // alias used elsewhere
+
+// ── SETTINGS (API keys only — no DB credentials needed) ───────────────────────
+function openSettings() {
+  $('settings-anthropic-key').value = localStorage.getItem('eras_anthropic_key') || '';
+  $('settings-imgbb-key').value = localStorage.getItem('eras_imgbb_key') || '';
+  $('settings-modal').classList.add('show');
+}
+function closeSettings() { $('settings-modal').classList.remove('show'); }
+function saveSettings() {
+  const ak = $('settings-anthropic-key').value.trim();
+  const ik = $('settings-imgbb-key').value.trim();
+  if (ak) localStorage.setItem('eras_anthropic_key', ak);
+  if (ik) localStorage.setItem('eras_imgbb_key', ik);
+  closeSettings();
+  showToast('Settings saved');
+}
+
+const PHASE_COLORS = ['#42C0F5','#6F6BD7','#10b981','#f59e0b','#f87171','#a78bfa'];
+let protocols = [];
+let curPid = null, curPhase = null;
+let editIv = null; // {mode,sec,idx}
+let pendingCfm = null;
+let inpCallback = null;
+
+const $ = id => document.getElementById(id);
+const toast = $('toast');
+
+function showToast(msg, type='s') {
+  toast.textContent = msg; toast.className = `show ${type}`;
+  clearTimeout(toast._t); toast._t = setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+function setStatus(state, txt) {
+  const b = $('status-badge'), t = $('status-txt');
+  b.className = `status ${state}`; t.textContent = txt;
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function openSettings() {
+  $('settings-bin-id').value = localStorage.getItem('eras_bin_id') || DB.BIN_ID;
+  $('settings-api-key').value = localStorage.getItem('eras_api_key') || DB.API_KEY;
+  $('settings-anthropic-key').value = localStorage.getItem('eras_anthropic_key') || '';
+  $('settings-imgbb-key').value = localStorage.getItem('eras_imgbb_key') || '';
+  $('settings-test-result').style.display = 'none';
+  $('settings-modal').classList.add('show');
+}
+
+function closeSettings() {
+  $('settings-modal').classList.remove('show');
+}
+
+function saveSettings() {
+  const binId = $('settings-bin-id').value.trim();
+  const apiKey = $('settings-api-key').value.trim();
+  const anthropicKey = $('settings-anthropic-key').value.trim();
+  const imgbbKey = $('settings-imgbb-key').value.trim();
+  if (!binId || !apiKey) { showToast('Please enter both Bin ID and Master Key', 'e'); return; }
+  localStorage.setItem('eras_bin_id', binId);
+  localStorage.setItem('eras_api_key', apiKey);
+  if (anthropicKey) localStorage.setItem('eras_anthropic_key', anthropicKey);
+  if (imgbbKey) localStorage.setItem('eras_imgbb_key', imgbbKey);
+  DB.BIN_ID = binId;
+  DB.API_KEY = apiKey;
+  closeSettings();
+  showToast('Settings saved — reloading data...');
+  setStatus('saving', 'Reconnecting...');
+  DB.load().then(data => {
+    protocols = data.protocols || [];
+    setStatus('ok', 'Connected');
+    renderSidebar(); renderMain();
+    showToast('Connected to database');
+  }).catch(e => {
+    setStatus('err', 'Connection failed');
+    showToast('Connection failed: ' + e.message, 'e');
+  });
+}
+
+async function seedDatabase() {
+  const result = $('settings-test-result');
+  result.style.display = '';
+  result.style.background = 'rgba(245,158,11,.1)';
+  result.style.color = 'var(--warning)';
+  result.textContent = 'Seeding database with protocol data...';
+  try {
+    const binId = $('settings-bin-id').value.trim() || DB.BIN_ID;
+    const apiKey = $('settings-api-key').value.trim() || DB.API_KEY;
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey },
+      body: JSON.stringify(DB.SEED)
+    });
+    if (r.ok) {
+      result.style.background = 'rgba(16,185,129,.1)';
+      result.style.color = 'var(--success)';
+      result.textContent = '&#10003; Database seeded successfully with all protocol data!';
+    } else {
+      const txt = await r.text();
+      result.style.background = 'rgba(239,68,68,.1)';
+      result.style.color = 'var(--danger)';
+      result.textContent = `✗ Seed failed: HTTP ${r.status} — ${txt.slice(0,100)}`;
+    }
+  } catch(e) {
+    result.style.background = 'rgba(239,68,68,.1)';
+    result.style.color = 'var(--danger)';
+    result.textContent = '✗ Network error: ' + e.message;
+  }
+}
+
+async function testConnection() {
+  const binId = $('settings-bin-id').value.trim();
+  const apiKey = $('settings-api-key').value.trim();
+  const result = $('settings-test-result');
+  result.style.display = '';
+  result.style.background = 'rgba(245,158,11,.1)';
+  result.style.color = 'var(--warning)';
+  result.textContent = 'Testing...';
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': apiKey, 'X-Bin-Meta': 'false' }
+    });
+    if (r.ok) {
+      result.style.background = 'rgba(16,185,129,.1)';
+      result.style.color = 'var(--success)';
+      result.textContent = '&#10003; Connection successful! Key and Bin ID are correct.';
+    } else {
+      result.style.background = 'rgba(239,68,68,.1)';
+      result.style.color = 'var(--danger)';
+      result.textContent = `✗ Error ${r.status}: ${r.status === 401 ? 'Invalid Master Key' : r.status === 404 ? 'Bin ID not found' : 'Connection failed'}`;
+    }
+  } catch(e) {
+    result.style.background = 'rgba(239,68,68,.1)';
+    result.style.color = 'var(--danger)';
+    result.textContent = '✗ Network error: ' + e.message;
+  }
+}
+
+// ── DB OPS ────────────────────────────────────────────────────────────────────
+async function saveToDB() {
+  if (location.protocol === 'file:') {
+    showHostingHelp();
+    return;
+  }
+  setStatus('saving','Saving...');
+  try {
+    const saved = await DB.save({ protocols });
+    if (saved) { setStatus('ok','Saved &#10003;'); showToast('Saved to database'); }
+    else { setStatus('ok','Local only'); showToast('No DB configured — edit DB.BIN_ID to connect','i'); }
+  } catch(e) { setStatus('err','Error'); showToast('Save failed: '+e.message,'e'); }
+}
+
+function showHostingHelp() {
+  const existing = document.getElementById('hosting-help');
+  if (existing) { existing.style.display=''; return; }
+  const div = document.createElement('div');
+  div.id = 'hosting-help';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.6);backdrop-filter:blur(6px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px';
+  div.innerHTML = `<div style="background:#fff;border-radius:18px;padding:30px 28px;max-width:500px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.2)">
+    <div style="font-size:22px;font-family:Georgia,serif;margin-bottom:10px"> Hosting Required</div>
+    <p style="font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:16px">
+      Browsers block API calls from files opened directly (<code style="background:#f0f2f8;padding:1px 5px;border-radius:4px">file://</code>).
+      To save to the database, the files need to be served over <code style="background:#f0f2f8;padding:1px 5px;border-radius:4px">http://</code>.
+    </p>
+    <div style="background:#f7f9fc;border-radius:12px;padding:16px;margin-bottom:14px;font-size:13px;line-height:1.9;border:1.5px solid #e5eaf2">
+      <strong>Option 1 — Netlify Drop (free, 60 seconds):</strong><br>
+      1. Go to <a href="https://app.netlify.com/drop" target="_blank" style="color:#6F6BD7;font-weight:700">app.netlify.com/drop</a><br>
+      2. Drag both HTML files onto the page<br>
+      3. Netlify gives you a public URL — open it from there<br><br>
+      <strong>Option 2 — VS Code Live Server:</strong><br>
+      Install the Live Server extension → right-click the file → Open with Live Server
+    </div>
+    <div style="background:#fff8e1;border-radius:10px;padding:11px 13px;font-size:12px;color:#7a5c00;margin-bottom:18px;border:1.5px solid #ffe082">
+      <strong>Note:</strong> The viewer already works offline on iPhone using the baked-in data. Only saving edits back to the database requires hosting.
+    </div>
+    <button onclick="document.getElementById('hosting-help').style.display='none'"
+      style="background:linear-gradient(135deg,#42C0F5,#6F6BD7);color:#fff;border:none;border-radius:20px;padding:11px 28px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:inherit">
+      Got it
+    </button>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+function exportJSON() {
+  const b = new Blob([JSON.stringify({protocols},null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+  a.download = 'eras-protocols.json'; a.click(); URL.revokeObjectURL(a.href);
+  showToast('Exported eras-protocols.json');
+}
+
+// ── CONFIRM ───────────────────────────────────────────────────────────────────
+function cfm(title, msg, fn) {
+  $('cfm-title').textContent = title; $('cfm-msg').textContent = msg;
+  $('cfm-ok').onclick = () => { closeCfm(); fn(); };
+  $('cfm-over').classList.add('show');
+}
+function closeCfm() { $('cfm-over').classList.remove('show'); }
+
+// ── SIMPLE INPUT MODAL ────────────────────────────────────────────────────────
+function openInp(title, label, placeholder, cb, {desc=false, descPlaceholder=''}={}) {
+  $('inp-title').textContent = title;
+  $('inp-label').textContent = label;
+  $('inp-val').value = '';
+  $('inp-val').placeholder = placeholder;
+  $('inp-desc-fg').style.display = desc ? '' : 'none';
+  if (desc) { $('inp-desc').value = ''; $('inp-desc').placeholder = descPlaceholder; }
+  inpCallback = cb;
+  $('inp-ok').onclick = () => {
+    const v = $('inp-val').value.trim();
+    if (!v) { showToast('Please enter a value','e'); return; }
+    cb(v, desc ? $('inp-desc').value.trim() : '');
+    closeInpModal();
+  };
+  $('inp-modal').classList.add('show');
+  setTimeout(() => $('inp-val').focus(), 100);
+}
+function closeInpModal() { $('inp-modal').classList.remove('show'); }
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const nav = $('sb-nav');
+  if (!protocols.length) {
+    nav.innerHTML = '<div style="padding:20px 12px;text-align:center;color:var(--muted);font-size:12px">No protocols yet.<br>Click <strong>+ Add</strong> to create one.</div>';
+    return;
+  }
+  nav.innerHTML = protocols.map((p,pi) => {
+    const open = curPid === p.id;
+    const phases = Object.keys(p.phases||{});
+    return `<div class="sb-proto">
+      <div class="sb-proto-hdr ${open?'active':''}" onclick="selProto(${p.id})">
+        <div class="sb-dot" style="background:${PHASE_COLORS[pi%PHASE_COLORS.length]}"></div>
+        <div class="sb-proto-name">${p.name}</div>
+        <div class="sb-caret" style="transform:${open?'rotate(90deg)':''}"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      ${open ? `<div class="sb-phases">
+        ${phases.map(ph=>{const isVa=p.phases[ph]&&p.phases[ph].__type==='visual_aid';return `<div class="sb-phase ${curPhase===ph?'active':''}" onclick="selPhase('${ph}')"><span class="sb-phase-pip"></span>${cap(ph)}${isVa?' \uD83D\uDDBC':''}</div>`;}).join('')}
+        <div class="sb-phase sb-add-phase" onclick="openAddPhase()">+ Add phase</div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function selProto(id) {
+  curPid = id;
+  const p = protocols.find(x=>x.id===id);
+  const phases = Object.keys(p.phases||{});
+  curPhase = phases[0]||null;
+  renderSidebar(); renderMain();
+}
+function selPhase(ph) { curPhase=ph; renderSidebar(); renderMain(); }
+function showOverview() { curPid=null; curPhase=null; renderSidebar(); renderMain(); }
+function cap(s) { return s?s.charAt(0).toUpperCase()+s.slice(1):''; }
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+function renderMain() {
+  if (!curPid) { renderOverview(); return; }
+  const p = protocols.find(x=>x.id===curPid);
+  if (!p) { renderOverview(); return; }
+  if (!curPhase||!p.phases[curPhase]) {
+    const phs=Object.keys(p.phases||{});
+    curPhase=phs[0]||null;
+  }
+  if (!curPhase) { renderEmptyProto(p); return; }
+  // Check if it's a visual aid phase
+  const phase = p.phases[curPhase];
+  if (phase && phase.__type === 'visual_aid') {
+    renderVisualAidEditor(p);
+    return;
+  }
+  renderPhaseEditor(p);
+}
+
+function renderOverview() {
+  $('main').innerHTML = `
+    <div class="bc"><strong>All Protocols</strong></div>
+    <div class="page-hdr">
+      <div><div class="page-title">ERAS Protocols</div><div class="page-sub">${protocols.length} protocol${protocols.length!==1?'s':''}</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openAddProtocol()">+ Add Protocol</button>
+    </div>
+    <div class="ov-grid">
+      ${protocols.map((p,pi)=>`
+        <div class="ov-card" onclick="selProto(${p.id})">
+          <div class="ov-card-name">${p.name}</div>
+          <div class="ov-card-desc">${p.description}</div>
+          <div class="ov-stats">
+            <div><div class="stat-num">${Object.keys(p.phases||{}).length}</div><div class="stat-lbl">Phases</div></div>
+            <div><div class="stat-num">${countSec(p)}</div><div class="stat-lbl">Sections</div></div>
+            <div><div class="stat-num">${countIv(p)}</div><div class="stat-lbl">Interventions</div></div>
+          </div>
+        </div>`).join('')}
+      <div class="ov-card add-card" onclick="openAddProtocol()">
+        <svg style="width:24px;height:24px;stroke:var(--indigo);fill:none;opacity:.5" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div style="font-size:12px;font-weight:700;color:var(--muted)">Add Protocol</div>
+      </div>
+    </div>`;
+}
+
+function renderEmptyProto(p) {
+  $('main').innerHTML = `
+    <div class="bc"><span class="link" onclick="showOverview()">All Protocols</span><span class="bc-sep">›</span><strong>${p.name}</strong></div>
+    <div class="page-hdr">
+      <div><div class="page-title">${p.name}</div><div class="page-sub">${p.description}</div></div>
+      <div class="page-acts">
+        <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="openEditProto(${p.id})">Edit Info</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProto(${p.id})">Delete</button>
+      </div>
+    </div>
+    <div class="empty">No phases yet. <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="openAddPhase()">Add First Phase</button></div>`;
+}
+
+function renderVisualAidEditor(p) {
+  const phase = p.phases[curPhase];
+  const chips = Object.keys(p.phases).map(ph => {
+    const isVa = p.phases[ph] && p.phases[ph].__type === 'visual_aid';
+    return '<button class="chip ' + (ph===curPhase?'active':'') + '" onclick="selPhase(\'' + ph + '\')">' + cap(ph) + (isVa ? ' \uD83D\uDDBC\uFE0F' : '') + '</button>';
+  }).join('');
+  $('main').innerHTML = '<div class="bc">'
+    + '<span class="link" onclick="showOverview()">All Protocols</span><span class="bc-sep">\u203a</span>'
+    + '<span class="link" onclick="selProto(' + p.id + ')">' + p.name + '</span><span class="bc-sep">\u203a</span>'
+    + '<strong>' + cap(curPhase) + '</strong></div>'
+    + '<div class="page-hdr">'
+    + '<div><div class="page-title">\uD83D\uDDBC\uFE0F ' + cap(curPhase) + '</div><div class="page-sub">Visual Aid phase</div></div>'
+    + '<div class="page-acts">'
+    + '<button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--sky);color:var(--indigo)" onclick="openAddVisualAid(\'' + curPhase + '\')" >Edit Image</button>'
+    + '<button class="btn btn-sm btn-danger" onclick="deletePhase(\'' + curPhase + '\')" >Delete Phase</button>'
+    + '</div></div>'
+    + '<div class="chips">' + chips + '<button class="chip dashed" onclick="openAddPhase()">+ Phase</button></div>'
+    + '<div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden">'
+    + '<div style="padding:14px 18px;background:#f8f9fc;border-bottom:1.5px solid var(--border);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--indigo)">Image Preview</div>'
+    + '<div style="padding:20px;text-align:center">'
+    + (phase.image
+        ? '<img src="' + phase.image + '" style="max-width:100%;max-height:400px;border-radius:10px;object-fit:contain">'
+          + (phase.caption ? '<div style="margin-top:10px;font-size:12px;color:var(--muted);font-style:italic">' + phase.caption + '</div>' : '')
+        : '<div style="color:var(--muted);font-size:13px">No image yet. Click Edit Image to upload.</div>')
+    + '</div></div>';
+}
+
+function renderPhaseEditor(p) {
+  const secs = p.phases[curPhase]||{};
+  const secKeys = Object.keys(secs);
+  let secHtml = secKeys.map(sec=>{
+    const ivs = secs[sec];
+    const rows = ivs.map((iv,idx)=>`
+      <div class="iv-row">
+        <div class="iv-info">
+          <div class="iv-name">${iv.name}</div>
+          <div class="iv-desc">${iv.summary}</div>
+        </div>
+        <div class="iv-acts">
+          <button class="ibtn" title="Up" onclick="moveIv('${esc(sec)}',${idx},-1)"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <button class="ibtn" title="Down" onclick="moveIv('${esc(sec)}',${idx},1)"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <button class="ibtn" title="Edit" onclick="openEditIv('${esc(sec)}',${idx})"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="ibtn del" title="Delete" onclick="deleteIv('${esc(sec)}',${idx})"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+        </div>
+      </div>`).join('');
+    return `<div class="sec-block">
+      <div class="sec-block-hdr">
+        <div class="sec-block-title">${sec}</div>
+        <div class="sec-block-acts">
+          <button class="btn btn-xs" style="background:var(--card);border:1.5px solid var(--border);color:var(--muted)" onclick="renameSec('${esc(sec)}')">Rename</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteSec('${esc(sec)}')">Delete</button>
+        </div>
+      </div>
+      ${rows||`<div class="empty" style="padding:14px">No interventions yet.</div>`}
+      <div class="add-row" onclick="openAddIv('${esc(sec)}')">
+        <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Intervention to "${sec}"
+      </div>
+    </div>`;
+  }).join('');
+
+  $('main').innerHTML = `
+    <div class="bc">
+      <span class="link" onclick="showOverview()">All Protocols</span><span class="bc-sep">›</span>
+      <span class="link" onclick="selProto(${p.id})">${p.name}</span><span class="bc-sep">›</span>
+      <strong>${cap(curPhase)}</strong>
+    </div>
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">${cap(curPhase)} Phase</div>
+        <div class="page-sub">${p.name} · ${secKeys.length} section${secKeys.length!==1?'s':''} · ${countPhaseIv(secs)} intervention${countPhaseIv(secs)!==1?'s':''}</div>
+      </div>
+      <div class="page-acts">
+        <button class="btn btn-sm" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted)" onclick="openEditProto(${p.id})">Edit Protocol</button>
+        <button class="btn btn-sm btn-danger" onclick="deletePhase('${curPhase}')">Delete Phase</button>
+      </div>
+    </div>
+    <div class="chips">
+      ${Object.keys(p.phases).map(ph=>{const isVa=p.phases[ph]&&p.phases[ph].__type==='visual_aid';return `<button class="chip ${ph===curPhase?'active':''}" onclick="selPhase('${ph}')">${cap(ph)}${isVa?' \uD83D\uDDBC':''}</button>`;}).join('')}
+      <button class="chip dashed" onclick="openAddPhase()">+ Phase</button>
+    </div>
+    ${secHtml||`<div class="empty" style="background:var(--card);border-radius:14px;border:1.5px solid var(--border)">No sections yet.</div>`}
+    <div style="margin-top:10px">
+      <button class="btn btn-primary btn-sm" onclick="openAddSection()">+ Add Section to ${cap(curPhase)}</button>
+    </div>`;
+}
+
+function esc(s) { return s.replace(/'/g,"\\'"); }
+function countSec(p) { return Object.values(p.phases||{}).reduce((n,ph)=>n+Object.keys(ph).length,0); }
+function countIv(p) { return Object.values(p.phases||{}).reduce((n,ph)=>{if(ph&&ph.__type==='visual_aid')return n+1;return n+Object.values(ph).reduce((m,s)=>m+(Array.isArray(s)?s.length:0),0);},0); }
+function countPhaseIv(secs) { return Object.values(secs).reduce((n,s)=>n+s.length,0); }
+
+// ── PROTOCOL CRUD ─────────────────────────────────────────────────────────────
+// ── ADD PROTOCOL (upload or manual) ──────────────────────────────────────────
+let _parsedProtocol = null;
+let _selectedFile = null;
+let _protoTabMode = 'upload';
+
+function openAddProtocol() {
+  _parsedProtocol = null;
+  _selectedFile = null;
+  _protoTabMode = 'upload';
+  // Reset upload pane
+  showUploadState('idle');
+  $('file-input').value = '';
+  $('file-chosen').style.display = 'none';
+  $('manual-proto-name').value = '';
+  $('manual-proto-desc').value = '';
+  switchProtoTab('upload', $('proto-tab-upload'));
+  $('add-proto-modal').classList.add('show');
+}
+
+function closeAddProtoModal() {
+  $('add-proto-modal').classList.remove('show');
+  _parsedProtocol = null;
+  _selectedFile = null;
+}
+
+function switchProtoTab(mode, btn) {
+  _protoTabMode = mode;
+  document.querySelectorAll('#add-proto-modal .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  $('proto-upload-pane').style.display = mode === 'upload' ? '' : 'none';
+  $('proto-manual-pane').style.display = mode === 'manual' ? '' : 'none';
+}
+
+function showUploadState(state, msg) {
+  $('upload-idle').style.display = state === 'idle' ? '' : 'none';
+  $('upload-processing').style.display = state === 'processing' ? '' : 'none';
+  $('upload-result').style.display = state === 'result' ? '' : 'none';
+  $('upload-error').style.display = state === 'error' ? '' : 'none';
+  if (state === 'error' && msg) $('upload-error').textContent = ' ' + msg;
+  if (state === 'processing' && msg) $('processing-status').textContent = msg;
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  $('drop-zone').style.borderColor = 'var(--indigo)';
+  $('drop-zone').style.background = 'rgba(111,107,215,.04)';
+}
+function dragLeave(e) {
+  $('drop-zone').style.borderColor = 'var(--border)';
+  $('drop-zone').style.background = '';
+}
+function dropFile(e) {
+  e.preventDefault();
+  dragLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file) processFileSelection(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFileSelection(file);
+}
+function processFileSelection(file) {
+  const allowed = ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!allowed.includes(file.type) && !['pdf','docx','doc'].includes(ext)) {
+    showUploadState('error', 'Please upload a PDF or Word document (.pdf, .docx, .doc)');
+    return;
+  }
+  _selectedFile = file;
+  $('file-chosen-name').textContent = file.name;
+  $('file-chosen-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  const fc = $('file-chosen');
+  fc.style.display = 'flex';
+  // Auto-process
+  parseDocumentWithClaude(file);
+}
+function clearFile() {
+  _selectedFile = null;
+  $('file-input').value = '';
+  $('file-chosen').style.display = 'none';
+  showUploadState('idle');
+}
+
+// ── ROBUST JSON PARSER ────────────────────────────────────────────────────────
+function robustJSONParse(text) {
+  // 1. Extract just the JSON object from the response (strip markdown fences etc.)
+  let json = text.trim();
+
+  // Strip markdown code fences if present
+  json = json.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+
+  // Find the outermost { ... } block
+  const start = json.indexOf('{');
+  const end   = json.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON object found in response');
+  json = json.slice(start, end + 1);
+
+  // 2. Remove placeholder values like { ... } inside strings or as values
+  //    e.g.  "intraoperative": { ... }  ->  "intraoperative": {}
+  json = json.replace(/:\s*\{\s*\.\.\.\s*\}/g, ': {}');
+  json = json.replace(/:\s*\[\s*\.\.\.\s*\]/g, ': []');
+
+  // 3. Remove trailing commas before } or ]  (common LLM mistake)
+  json = json.replace(/,\s*([}\]])/g, '$1');
+
+  // 4. Try parsing — if it works, great
+  try {
+    return JSON.parse(json);
+  } catch(e) {
+    // 5. More aggressive cleanup: remove any line that contains only "..." or similar
+    json = json.split('\n').filter(line => {
+      const t = line.trim();
+      return t !== '...' && t !== '"..."' && t !== "'...'" && t !== '// ...';
+    }).join('\n');
+
+    // Remove trailing commas again after line removal
+    json = json.replace(/,\s*([}\]])/g, '$1');
+
+    try {
+      return JSON.parse(json);
+    } catch(e2) {
+      // 6. Last resort: send back to Claude to fix the JSON
+      throw new Error(e2.message);
+    }
+  }
+}
+
+// ── DOCX TEXT EXTRACTION (no external library needed) ─────────────────────────
+// A .docx file is a ZIP. We find word/document.xml inside it and strip the XML tags.
+async function extractDocxText(arrayBuffer) {
+  // Locate the ZIP local file headers and find word/document.xml
+  const bytes = new Uint8Array(arrayBuffer);
+
+  function readUint16LE(offset) {
+    return bytes[offset] + (bytes[offset+1] << 8);
+  }
+  function readUint32LE(offset) {
+    return bytes[offset] + (bytes[offset+1]<<8) + (bytes[offset+2]<<16) + (bytes[offset+3]<<24);
+  }
+
+  const decoder = new TextDecoder('utf-8');
+  let offset = 0;
+
+  while (offset < bytes.length - 4) {
+    // ZIP local file header signature: PK\x03\x04
+    if (bytes[offset]===0x50 && bytes[offset+1]===0x4B &&
+        bytes[offset+2]===0x03 && bytes[offset+3]===0x04) {
+
+      const compression   = readUint16LE(offset + 8);
+      const compressedSz  = readUint32LE(offset + 18);
+      const uncompressedSz= readUint32LE(offset + 22);
+      const nameLen       = readUint16LE(offset + 26);
+      const extraLen      = readUint16LE(offset + 28);
+      const name          = decoder.decode(bytes.slice(offset+30, offset+30+nameLen));
+      const dataOffset    = offset + 30 + nameLen + extraLen;
+
+      if (name === 'word/document.xml') {
+        let xmlBytes;
+        if (compression === 0) {
+          // Stored — no compression
+          xmlBytes = bytes.slice(dataOffset, dataOffset + uncompressedSz);
+        } else if (compression === 8) {
+          // Deflate
+          const compressed = bytes.slice(dataOffset, dataOffset + compressedSz);
+          const ds = new DecompressionStream('deflate-raw');
+          const writer = ds.writable.getWriter();
+          const reader = ds.readable.getReader();
+          writer.write(compressed);
+          writer.close();
+          const chunks = [];
+          let done = false;
+          while (!done) {
+            const result = await reader.read();
+            if (result.done) { done = true; } else { chunks.push(result.value); }
+          }
+          const total = chunks.reduce((s, c) => s + c.length, 0);
+          xmlBytes = new Uint8Array(total);
+          let pos = 0;
+          for (const chunk of chunks) { xmlBytes.set(chunk, pos); pos += chunk.length; }
+        } else {
+          throw new Error('Unsupported ZIP compression method: ' + compression);
+        }
+
+        // Parse the XML and extract text
+        const xml = decoder.decode(xmlBytes);
+        // Strip XML tags, decode common entities, collapse whitespace
+        const text = xml
+          .replace(/<w:p[ >]/g, '\n<w:p ')    // paragraph breaks
+          .replace(/<\/w:p>/g, '\n')
+          .replace(/<w:br[^>]*\/>/g, '\n')
+          .replace(/<[^>]+>/g, '')             // strip all tags
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#x27;/g, "'")
+          .replace(/[ \t]+/g, ' ')             // collapse spaces
+          .replace(/\n{3,}/g, '\n\n')          // collapse blank lines
+          .trim();
+        return text;
+      }
+
+      offset = dataOffset + compressedSz;
+    } else {
+      offset++;
+    }
+  }
+  throw new Error('word/document.xml not found in the uploaded file. Is this a valid .docx?');
+}
+
+async function parseDocumentWithClaude(file) {
+  showUploadState('processing', 'Reading document...');
+  $('add-proto-btn').disabled = true;
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const isPDF = ext === 'pdf';
+
+    const systemPrompt = [
+      'You are a medical protocol parser. Extract the content from this ERAS (Enhanced Recovery After Surgery) anesthesia protocol document and return it as a JSON object.',
+      '',
+      'The JSON must follow this EXACT structure:',
+      '{',
+      '  "name": "Protocol name (e.g. Thoracic, Colorectal)",',
+      '  "description": "One-line description including institution and version",',
+      '  "phases": {',
+      '    "preoperative": {',
+      '      "Section Name": [',
+      '        {',
+      '          "name": "Intervention name",',
+      '          "summary": "One sentence summary — be specific with doses",',
+      '          "content": "<h2>Name</h2><p>...</p><ul><li>...</li></ul>"',
+      '        }',
+      '      ]',
+      '    },',
+      '    "regional anesthesia": {',
+      '      "Blocks": [',
+      '        {',
+      '          "name": "Block name — Surgery Type (e.g. TAP Block — Laparotomy)",',
+      '          "summary": "Brief block description with drug and volume",',
+      '          "content": "<h2>...</h2> full HTML content"',
+      '        }',
+      '      ]',
+      '    },',
+      '    "intraoperative": { "...": [] },',
+      '    "postoperative": { "...": [] }',
+      '  }',
+      '}',
+      '',
+      'Rules:',
+      '- Always include a "regional anesthesia" phase as its own top-level phase if regional blocks are mentioned',
+      '- Group interventions into logical sections (e.g. "Medications", "Anesthesia", "PONV Prophylaxis", "Fluid Management", "Pain Management", "NO BUGS (SSI Reduction)")',
+      '- The "content" field must be valid HTML using h2, h3, p, ul, li, strong, table, tr, th, td tags',
+      '- Include ALL specific doses, routes, timing, contraindications, and clinical details in the content',
+      '- The "summary" should be concise (one line) but include the key dose',
+      '- Return ONLY the JSON object, no markdown, no explanation',
+      '- CRITICAL: Do not use { ... } or [ ... ] as placeholders — always include real content',
+      '- CRITICAL: Do not use trailing commas after the last item in any array or object',
+      '- CRITICAL: Every phase must have at least one section with at least one intervention'
+    ].join('\n');
+
+    let userContent;
+
+    if (isPDF) {
+      // PDFs: send as base64 document directly to the API
+      showUploadState('processing', 'Reading PDF...');
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      userContent = [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+        { type: 'text', text: 'Please parse this ERAS protocol document and return the JSON structure as described.' }
+      ];
+    } else {
+      // Word docs: extract text from docx XML without any external library
+      showUploadState('processing', 'Extracting text from Word document...');
+      const arrayBuffer = await file.arrayBuffer();
+      const docText = await extractDocxText(arrayBuffer);
+      if (!docText || docText.trim().length < 50) {
+        throw new Error('Could not extract text from Word document. Try saving as PDF and uploading that instead.');
+      }
+      userContent = [
+        { type: 'text', text: 'Please parse this ERAS protocol document and return the JSON structure as described.\n\nDOCUMENT TEXT:\n\n' + docText }
+      ];
+    }
+
+    showUploadState('processing', 'Claude is reading and structuring the protocol...');
+
+    // Get Anthropic key from localStorage (set via Settings panel)
+    const anthropicKey = localStorage.getItem('eras_anthropic_key') || '';
+    if (!anthropicKey) {
+      throw new Error('Anthropic API key not set. Open Settings (top bar) and add your Anthropic API key to enable document parsing.');
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error('API error ' + response.status + ': ' + err.slice(0,200));
+    }
+
+    const data = await response.json();
+    const text = data.content.map(b => b.text || '').join('');
+
+    showUploadState('processing', 'Parsing response...');
+
+    // Extract and clean JSON from the response
+    let parsed;
+    try {
+      parsed = robustJSONParse(text);
+    } catch(e) {
+      throw new Error('Could not parse protocol from response: ' + e.message + '. Try uploading a PDF version of the document.');
+    }
+
+    if (!parsed.name || !parsed.phases) throw new Error('Response missing required fields (name, phases)');
+
+    // Assign a new ID
+    parsed.id = Math.max(0, ...protocols.map(x => x.id)) + 1;
+    _parsedProtocol = parsed;
+
+    // Show preview
+    const phaseNames = Object.keys(parsed.phases);
+    const ivCount = Object.values(parsed.phases).reduce((n, ph) =>
+      n + Object.values(ph).reduce((m, sec) => m + (Array.isArray(sec) ? sec.length : 0), 0), 0);
+
+    let previewHtml = '';
+    previewHtml += '<div style="margin-bottom:10px"><strong style="font-size:14px">' + parsed.name + '</strong><br>';
+    previewHtml += '<span style="color:var(--muted)">' + (parsed.description || '') + '</span></div>';
+    previewHtml += '<div style="display:flex;gap:14px;margin-bottom:10px">';
+    previewHtml += '<div><strong>' + phaseNames.length + '</strong> <span style="color:var(--muted)">phases</span></div>';
+    previewHtml += '<div><strong>' + ivCount + '</strong> <span style="color:var(--muted)">interventions</span></div>';
+    previewHtml += '</div>';
+    phaseNames.forEach(function(ph) {
+      const secs = parsed.phases[ph];
+      previewHtml += '<div style="margin-bottom:6px"><strong style="color:var(--indigo)">' + ph + '</strong>';
+      Object.entries(secs).forEach(function(entry) {
+        const s = entry[0]; const items = entry[1];
+        previewHtml += '<div style="margin-left:12px;color:var(--muted)">' + s + ' (' + (Array.isArray(items) ? items.length : 0) + ')</div>';
+      });
+      previewHtml += '</div>';
+    });
+    $('result-preview').innerHTML = previewHtml;
+
+    showUploadState('result');
+    $('add-proto-btn').disabled = false;
+
+  } catch(e) {
+    console.error('Parse error:', e);
+    showUploadState('error', e.message);
+    $('add-proto-btn').disabled = false;
+  }
+}
+
+function confirmAddProtocol() {
+  if (_protoTabMode === 'upload') {
+    if (!_parsedProtocol) { showToast('Please upload and process a document first', 'e'); return; }
+    protocols.push(_parsedProtocol);
+    curPid = _parsedProtocol.id;
+    curPhase = Object.keys(_parsedProtocol.phases)[0] || null;
+    closeAddProtoModal();
+    renderSidebar(); renderMain();
+    showToast('Protocol added: ' + _parsedProtocol.name);
+    _parsedProtocol = null;
+  } else {
+    const name = $('manual-proto-name').value.trim();
+    const desc = $('manual-proto-desc').value.trim();
+    if (!name) { showToast('Please enter a protocol name', 'e'); return; }
+    const id = Math.max(0, ...protocols.map(x => x.id)) + 1;
+    protocols.push({ id, name, description: desc, phases: {} });
+    curPid = id; curPhase = null;
+    closeAddProtoModal();
+    renderSidebar(); renderMain();
+    showToast('Protocol created: ' + name);
+  }
+}
+function openEditProto(id) {
+  const p=protocols.find(x=>x.id===id);
+  openInp('Edit Protocol','Protocol Name',p.name,(name,desc)=>{
+    p.name=name; if(desc) p.description=desc;
+    renderSidebar(); renderMain(); showToast('Protocol updated');
+  },{desc:true,descPlaceholder:p.description});
+  setTimeout(()=>{ $('inp-val').value=p.name; $('inp-desc').value=p.description; },120);
+}
+function deleteProto(id) {
+  const p=protocols.find(x=>x.id===id);
+  cfm('Delete Protocol?',p.name + " and all its content will be permanently removed.",()=>{
+    protocols=protocols.filter(x=>x.id!==id);
+    curPid=null; curPhase=null;
+    renderSidebar(); renderMain(); showToast('Protocol deleted','i');
+  });
+}
+
+// ── PHASE CRUD ────────────────────────────────────────────────────────────────
+function openAddPhase() {
+  // Show chooser: standard phase or visual aid
+  const existing = document.getElementById('phase-type-chooser');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'phase-type-chooser';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px';
+  div.innerHTML = '<div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.2)">'
+    + '<div style="font-family:Georgia,serif;font-size:18px;margin-bottom:8px">Add Phase</div>'
+    + '<div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5">Choose the type of phase to add:</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px">'
+    + '<button onclick="document.getElementById(\'phase-type-chooser\').remove();openNormalPhase()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;font-family:inherit">'
+    + '<div style="font-weight:700;font-size:13px;margin-bottom:3px">Standard Phase</div>'
+    + '<div style="font-size:12px;color:var(--muted)">Preoperative, intraoperative, postoperative — contains sections and interventions</div>'
+    + '</button>'
+    + '<button onclick="document.getElementById(\'phase-type-chooser\').remove();openAddVisualAid()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;font-family:inherit">'
+    + '<div style="font-weight:700;font-size:13px;margin-bottom:3px">Visual Aid</div>'
+    + '<div style="font-size:12px;color:var(--muted)">Upload a diagram, chart, or reference image displayed in the viewer</div>'
+    + '</button>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'phase-type-chooser\').remove()" style="margin-top:14px;width:100%;background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit">Cancel</button>'
+    + '</div>';
+  document.body.appendChild(div);
+}
+
+function openNormalPhase() {
+  openInp('Add Phase', 'Phase Name', 'e.g. postoperative', (name) => {
+    const ph = name.toLowerCase();
+    const p = protocols.find(x => x.id === curPid);
+    if (p.phases[ph]) { showToast('Phase already exists', 'e'); return; }
+    p.phases[ph] = {};
+    curPhase = ph;
+    renderSidebar(); renderMain();
+    showToast('Phase added: ' + ph);
+  });
+}
+// -- VISUAL AID PHASE
+let _vaImageData = null;
+
+function openAddVisualAid(editPhaseName) {
+  _vaImageData = null;
+  $('va-title').value = editPhaseName || '';
+  $('va-caption').value = '';
+  $('va-preview').style.display = 'none';
+  $('va-drop-zone').style.display = '';
+  $('va-modal-title').textContent = editPhaseName ? 'Edit Visual Aid' : 'Add Visual Aid';
+  if (editPhaseName) {
+    const p = protocols.find(x => x.id === curPid);
+    const phase = p.phases[editPhaseName];
+    if (phase && phase.__type === 'visual_aid') {
+      _vaImageData = phase.image || null;
+      $('va-caption').value = phase.caption || '';
+      if (_vaImageData) {
+        $('va-preview-img').src = _vaImageData;
+        $('va-preview-name').textContent = 'Current image';
+        $('va-preview').style.display = '';
+        $('va-drop-zone').style.display = 'none';
+      }
+    }
+  }
+  $('visual-aid-modal').classList.add('show');
+}
+
+function closeVaModal() {
+  $('visual-aid-modal').classList.remove('show');
+  _vaImageData = null;
+}
+
+function vaDragOver(e) { e.preventDefault(); $('va-drop-zone').style.borderColor='var(--sky)'; $('va-drop-zone').style.background='rgba(66,192,245,.04)'; }
+function vaDragLeave(e) { $('va-drop-zone').style.borderColor='var(--border)'; $('va-drop-zone').style.background=''; }
+function vaDropFile(e) { e.preventDefault(); vaDragLeave(e); const f=e.dataTransfer.files[0]; if(f) vaLoadImage(f); }
+function vaHandleFile(e) { const f=e.target.files[0]; if(f) vaLoadImage(f); }
+
+// -- IMAGE UPLOAD UTILITY (ImgBB)
+// Uploads to ImgBB free hosting and returns the URL.
+// Get a free API key at api.imgbb.com -> set it in Settings.
+async function uploadImageToImgBB(file) {
+  const imgbbKey = localStorage.getItem('eras_imgbb_key') || '';
+  if (!imgbbKey) {
+    throw new Error('No ImgBB API key configured. Open Settings and add your ImgBB key (free at api.imgbb.com).');
+  }
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await fetch('https://api.imgbb.com/1/upload?key=' + imgbbKey, {
+    method: 'POST', body: formData
+  });
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error('ImgBB HTTP ' + response.status + ': ' + err.slice(0,120));
+  }
+  const data = await response.json();
+  if (!data.success) throw new Error('ImgBB error: ' + JSON.stringify(data.error || data));
+  return data.data.url;
+}
+
+function vaLoadImage(file) {
+  if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'e'); return; }
+  // Show local preview immediately
+  $('va-preview-img').src = URL.createObjectURL(file);
+  $('va-preview-name').textContent = 'Uploading ' + file.name + '...';
+  $('va-preview').style.display = '';
+  $('va-drop-zone').style.display = 'none';
+  _vaImageData = null; // clear until upload completes
+  uploadImageToImgBB(file).then(url => {
+    _vaImageData = url;
+    $('va-preview-img').src = url;
+    $('va-preview-name').textContent = file.name + ' — hosted on ImgBB';
+  }).catch(err => {
+    _vaImageData = null;
+    $('va-preview').style.display = 'none';
+    $('va-drop-zone').style.display = '';
+    showToast('Upload failed: ' + err.message, 'e');
+  });
+}
+
+function clearVaImage() {
+  _vaImageData = null;
+  $('va-preview').style.display = 'none';
+  $('va-drop-zone').style.display = '';
+  $('va-img-input').value = '';
+}
+
+function saveVaPhase() {
+  const title = $('va-title').value.trim();
+  if (!title) { showToast('Please enter a title', 'e'); return; }
+  if (!_vaImageData) { showToast('Please wait for the image to finish uploading', 'e'); return; }
+  const caption = $('va-caption').value.trim();
+  const p = protocols.find(x => x.id === curPid);
+  const key = title.toLowerCase();
+  p.phases[key] = { __type: 'visual_aid', title: title, image: _vaImageData, caption: caption };
+  curPhase = key;
+  closeVaModal();
+  renderSidebar(); renderMain();
+  showToast('Visual Aid added: ' + title);
+}
+
+// -- RTE IMAGE INSERTION
+function rInsertImage() { $('rte-img-input').click(); }
+function rHandleImageFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'e'); return; }
+  // Insert a placeholder while uploading
+  $('rte').focus();
+  const placeholder = '<em style="color:var(--muted)">[uploading image...]</em>';
+  document.execCommand('insertHTML', false, placeholder);
+  uploadImageToImgBB(file).then(url => {
+    // Replace placeholder with actual image
+    const rte = $('rte');
+    rte.innerHTML = rte.innerHTML.replace(placeholder, '<img src="' + url + '" style="max-width:100%;border-radius:8px;margin:8px 0;display:block" alt="">');
+  }).catch(err => {
+    const rte = $('rte');
+    rte.innerHTML = rte.innerHTML.replace(placeholder, '');
+    showToast('Image upload failed: ' + err.message, 'e');
+  });
+  e.target.value = '';
+}
+
+function deletePhase(ph) {
+  const p=protocols.find(x=>x.id===curPid);
+  const phaseData=p.phases[ph];
+  const isVa=phaseData&&phaseData.__type==='visual_aid';
+  const desc=isVa?'This visual aid will be permanently removed.':'and its '+countPhaseIv(phaseData)+' intervention(s) will be removed.';
+  cfm('Delete Phase?',cap(ph)+' '+desc,()=>{
+    delete p.phases[ph];
+    const phs=Object.keys(p.phases); curPhase=phs[0]||null;
+    renderSidebar(); renderMain(); showToast('Phase deleted','i');
+  });
+}
+
+// ── SECTION CRUD ──────────────────────────────────────────────────────────────
+function openAddSection() {
+  openInp('Add Section','Section Name','e.g. Pain Management',(name)=>{
+    const p=protocols.find(x=>x.id===curPid);
+    if(p.phases[curPhase][name]){showToast('Section already exists','e');return;}
+    p.phases[curPhase][name]=[];
+    renderMain(); showToast(`Section "${name}" added`);
+  });
+}
+function renameSec(old) {
+  openInp('Rename Section','New Name',old,(nw)=>{
+    const p=protocols.find(x=>x.id===curPid);
+    const ph=p.phases[curPhase];
+    const newPh={};
+    for(const k of Object.keys(ph)) newPh[k===old?nw:k]=ph[k];
+    p.phases[curPhase]=newPh;
+    renderMain(); showToast(`Renamed to "${nw}"`);
+  });
+  setTimeout(()=>$('inp-val').value=old,120);
+}
+function deleteSec(sec) {
+  const p=protocols.find(x=>x.id===curPid);
+  const n=(p.phases[curPhase][sec]||[]).length;
+  cfm('Delete Section?',`"${sec}" and its ${n} intervention${n!==1?'s':''} will be removed.`,()=>{
+    delete p.phases[curPhase][sec];
+    renderMain(); showToast('Section deleted','i');
+  });
+}
+
+// ── INTERVENTION MODAL ────────────────────────────────────────────────────────
+function switchTab(tab,btn) {
+  ['basic','content'].forEach(t=>$(('tab-'+t)).style.display=t===tab?'':'none');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function rfmt(cmd,val) { $('rte').focus(); document.execCommand(cmd,false,val||null); }
+function rInsertTable() {
+  const rows=prompt('Rows (including header):','3');
+  const cols=prompt('Columns:','2');
+  if(!rows||!cols) return;
+  let h='<table><tr>'; for(let c=0;c<cols;c++) h+=`<th>Header ${c+1}</th>`; h+='</tr>';
+  for(let r=1;r<rows;r++){h+='<tr>';for(let c=0;c<cols;c++)h+='<td>Cell</td>';h+='</tr>';}
+  h+='</table><p></p>';
+  $('rte').focus(); document.execCommand('insertHTML',false,h);
+}
+
+function openAddIv(sec) {
+  editIv={mode:'add',sec,idx:-1};
+  $('iv-modal-title').textContent=`Add Intervention to "${sec}"`;
+  $('iv-name').value=''; $('iv-summary').value=''; $('iv-section').value=sec;
+  $('rte').innerHTML='<h2>Title</h2><p>Content here.</p><ul><li>Item</li></ul>';
+  switchTab('basic',document.querySelector('.tab'));
+  $('iv-modal').classList.add('show');
+}
+function openEditIv(sec,idx) {
+  const p=protocols.find(x=>x.id===curPid);
+  const iv=p.phases[curPhase][sec][idx];
+  editIv={mode:'edit',sec,idx};
+  $('iv-modal-title').textContent='Edit Intervention';
+  $('iv-name').value=iv.name; $('iv-summary').value=iv.summary; $('iv-section').value=sec;
+  $('rte').innerHTML=iv.content||'';
+  switchTab('basic',document.querySelector('.tab'));
+  $('iv-modal').classList.add('show');
+}
+function closeIvModal() { $('iv-modal').classList.remove('show'); editIv=null; }
+
+function saveIv() {
+  const name=$('iv-name').value.trim();
+  const summary=$('iv-summary').value.trim();
+  const newSec=$('iv-section').value.trim();
+  const content=$('rte').innerHTML.trim();
+  if(!name){showToast('Please enter a name','e');return;}
+  if(!summary){showToast('Please enter a summary','e');return;}
+  if(!newSec){showToast('Please enter a section','e');return;}
+  const p=protocols.find(x=>x.id===curPid);
+  if(!p.phases[curPhase][newSec]) p.phases[curPhase][newSec]=[];
+  const item={name,summary,content};
+  const {mode,sec,idx}=editIv;
+  if(mode==='edit') {
+    if(sec===newSec) { p.phases[curPhase][sec][idx]=item; }
+    else {
+      p.phases[curPhase][sec].splice(idx,1);
+      if(!p.phases[curPhase][sec].length) delete p.phases[curPhase][sec];
+      p.phases[curPhase][newSec].push(item);
+    }
+    showToast('Intervention updated');
+  } else {
+    p.phases[curPhase][newSec].push(item);
+    showToast('Intervention added');
+  }
+  closeIvModal(); renderMain();
+}
+
+function moveIv(sec,idx,dir) {
+  const p=protocols.find(x=>x.id===curPid);
+  const arr=p.phases[curPhase][sec];
+  const ni=idx+dir;
+  if(ni<0||ni>=arr.length) return;
+  [arr[idx],arr[ni]]=[arr[ni],arr[idx]];
+  renderMain();
+}
+function deleteIv(sec,idx) {
+  const p=protocols.find(x=>x.id===curPid);
+  const iv=p.phases[curPhase][sec][idx];
+  cfm('Delete Intervention?',`"${iv.name}" will be permanently removed.`,()=>{
+    p.phases[curPhase][sec].splice(idx,1);
+    if(!p.phases[curPhase][sec].length) delete p.phases[curPhase][sec];
+    renderMain(); showToast('Deleted','i');
+  });
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeIvModal();closeInpModal();closeCfm();closeSettings();closeAddProtoModal();closeVaModal();const ptc=document.getElementById('phase-type-chooser');if(ptc)ptc.remove();}
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+setStatus('saving', 'Loading...');
+loadProtocols().then(function(data) {
+  protocols = data;
+  setStatus('ok', 'Loaded');
+  renderSidebar();
+  renderMain();
+}).catch(function(e) {
+  setStatus('err', 'Error');
+  showToast('Failed to load: ' + e.message, 'e');
+  protocols = JSON.parse(JSON.stringify(SEED.protocols || []));
+  renderSidebar();
+  renderMain();
+});
+</script>
+</body>
+</html>
