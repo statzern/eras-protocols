@@ -37,6 +37,100 @@ function setStatus(type, text) {
     `;
 }
 
+/**
+ * Renders the sidebar navigation with protocol list and phases.
+ */
+function renderSidebar() {
+    const sb = document.querySelector('.sb-scroll');
+    if (!sb) return;
+
+    let html = '';
+    protocols.forEach(p => {
+        const isActive = p.id === curPid;
+        const phases = Object.keys(p.phases || {});
+
+        html += `
+            <div class="sb-proto">
+                <div class="sb-proto-hdr ${isActive ? 'active' : ''}" onclick="selectProto(${p.id})">
+                    <div class="sb-dot" style="background:${p.color || 'var(--indigo)'}"></div>
+                    <div class="sb-proto-name">${p.name}</div>
+                </div>
+                ${isActive ? `
+                    <div class="sb-phases">
+                        ${phases.map(ph => `
+                            <div class="sb-phase ${curPhase === ph ? 'active' : ''}" onclick="selectPhase('${ph}')">
+                                <div class="sb-phase-pip"></div>
+                                ${ph.charAt(0).toUpperCase() + ph.slice(1)}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    sb.innerHTML = html;
+}
+
+/**
+ * Renders the main content area based on the selected protocol and phase.
+ */
+function renderMain() {
+    const main = document.querySelector('.main');
+    if (!main || !protocols.length) return;
+
+    const p = protocols.find(x => x.id === curPid) || protocols[0];
+    if (!curPid) curPid = p.id;
+
+    const phaseData = p.phases[curPhase] || {};
+    const sections = Object.keys(phaseData);
+
+    let html = `
+        <div class="page-hdr">
+            <div>
+                <div class="page-title">${p.name}</div>
+                <div class="page-sub">${p.description}</div>
+            </div>
+        </div>
+        <div class="chips">
+            ${Object.keys(p.phases).map(ph => `
+                <div class="chip ${curPhase === ph ? 'active' : ''}" onclick="selectPhase('${ph}')">
+                    ${ph.toUpperCase()}
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    if (sections.length === 0) {
+        html += `<div class="empty">No interventions defined for this phase.</div>`;
+    } else {
+        sections.forEach(sec => {
+            html += `
+                <div class="sec-block">
+                    <div class="sec-block-hdr">
+                        <div class="sec-block-title">${sec}</div>
+                    </div>
+                    ${phaseData[sec].map(iv => `
+                        <div class="iv-row" onclick="viewIntervention('${sec}', '${iv.name}')">
+                            <div class="iv-info">
+                                <div class="iv-name">${iv.name}</div>
+                                <div class="iv-desc">${iv.summary || ''}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        });
+    }
+    main.innerHTML = html;
+}
+
+// Ensure global state variables are defined at the top of your script
+let curPid = null;
+let curPhase = 'preoperative';
+
+function selectProto(id) { curPid = id; renderSidebar(); renderMain(); }
+function selectPhase(ph) { curPhase = ph; renderSidebar(); renderMain(); }
+
 async function initApp() {
 setStatus('saving', 'Syncing with cloud...');
 try {
