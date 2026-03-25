@@ -4,159 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERAS Pocket Guide</title>
-    </head>
+    <style>
+        /* Essential styles for the layout to show up */
+        body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
+        #sidebar { width: 250px; border-right: 1px solid #ddd; padding: 10px; overflow-y: auto; }
+        #main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .status { padding: 5px 10px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; }
+        .status.ok { background: #e6fffa; color: #2c7a7b; }
+        .status.saving { background: #fffaf0; color: #9c4221; }
+        .status.err { background: #fff5f5; color: #c53030; }
+    </style>
+</head>
 <body>
-    <div id="app">
-        </div>
+
+    <div id="sidebar">
+        <div id="status-area"></div>
+        <div class="sb-scroll"></div>
+    </div>
+
+    <div id="main-content" class="main">
+        <div class="empty">Loading protocols...</div>
+    </div>
 
     <script>
-    // CONFIGURATION: Replace with your actual JSONBin details
-const JSONBIN_BIN_ID = '69c41751b7ec241ddca1add6';
-const JSONBIN_API_KEY = '$2a$10$AjQEh3KkVoufT5BTqyCazemisCPpV3iIX5i6G.1U43QZdUDER2aDC';
+        // 1. CONFIGURATION
+        const JSONBIN_BIN_ID = 'YOUR_BIN_ID_HERE';
+        const JSONBIN_API_KEY = 'YOUR_API_KEY_HERE';
 
-let protocols = [];
+        // 2. GLOBAL STATE
+        let protocols = [];
+        let curPid = null;
+        let curPhase = 'preoperative';
 
-/**
- * Updates the visual status badge in the top bar.
- * @param {string} type - The status type ('ok', 'saving', or 'err').
- * @param {string} text - The text to display in the badge.
- */
-function setStatus(type, text) {
-    const statusEl = document.getElementById('status-area');
-    if (!statusEl) return;
+        // 3. UTILITIES
+        function setStatus(type, text) {
+            const statusEl = document.getElementById('status-area');
+            if (!statusEl) return;
+            const typeMap = { 'ok': 'ok', 'saving': 'saving', 'error': 'err', 'err': 'err' };
+            const className = typeMap[type] || 'saving';
+            statusEl.innerHTML = `<div class="status ${className}">${text}</div>`;
+        }
 
-    // Map internal types to CSS classes used in your style block
-    const typeMap = { 'ok': 'ok', 'saving': 'saving', 'error': 'err', 'err': 'err' };
-    const className = typeMap[type] || 'saving';
+        // 4. CORE LOGIC
+        async function initApp() {
+            setStatus('saving', 'Syncing with cloud...');
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                });
 
-    statusEl.innerHTML = `
-        <div class="status ${className}">
-            <div class="status-dot"></div>
-            ${text}
-        </div>
-    `;
-}
+                if (!response.ok) throw new Error('Cloud fetch failed');
 
-/**
- * Renders the sidebar navigation with protocol list and phases.
- */
-function renderSidebar() {
-    const sb = document.querySelector('.sb-scroll');
-    if (!sb) return;
+                const data = await response.json();
+                // Check both possible JSONBin structures
+                protocols = data.record.protocols || data.record;
 
-    let html = '';
-    protocols.forEach(p => {
-        const isActive = p.id === curPid;
-        const phases = Object.keys(p.phases || {});
+                if (protocols.length > 0) curPid = protocols[0].id;
 
-        html += `
-            <div class="sb-proto">
-                <div class="sb-proto-hdr ${isActive ? 'active' : ''}" onclick="selectProto(${p.id})">
-                    <div class="sb-dot" style="background:${p.color || 'var(--indigo)'}"></div>
-                    <div class="sb-proto-name">${p.name}</div>
-                </div>
-                ${isActive ? `
-                    <div class="sb-phases">
-                        ${phases.map(ph => `
-                            <div class="sb-phase ${curPhase === ph ? 'active' : ''}" onclick="selectPhase('${ph}')">
-                                <div class="sb-phase-pip"></div>
-                                ${ph.charAt(0).toUpperCase() + ph.slice(1)}
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    });
-    sb.innerHTML = html;
-}
+                setStatus('ok', 'Cloud Sync Active');
+            } catch (err) {
+                console.warn("Falling back to local file:", err);
+                try {
+                    const local = await fetch('./protocols.json');
+                    const localData = await local.json();
+                    protocols = localData.protocols;
+                    if (protocols.length > 0) curPid = protocols[0].id;
+                    setStatus('ok', 'Running Local (Offline)');
+                } catch (localErr) {
+                    setStatus('err', 'Failed to load any data');
+                }
+            }
+            renderSidebar();
+            renderMain();
+        }
 
-/**
- * Renders the main content area based on the selected protocol and phase.
- */
-function renderMain() {
-    const main = document.querySelector('.main');
-    if (!main || !protocols.length) return;
+        function renderSidebar() {
+            const sb = document.querySelector('.sb-scroll');
+            if (!sb) return;
 
-    const p = protocols.find(x => x.id === curPid) || protocols[0];
-    if (!curPid) curPid = p.id;
-
-    const phaseData = p.phases[curPhase] || {};
-    const sections = Object.keys(phaseData);
-
-    let html = `
-        <div class="page-hdr">
-            <div>
-                <div class="page-title">${p.name}</div>
-                <div class="page-sub">${p.description}</div>
-            </div>
-        </div>
-        <div class="chips">
-            ${Object.keys(p.phases).map(ph => `
-                <div class="chip ${curPhase === ph ? 'active' : ''}" onclick="selectPhase('${ph}')">
-                    ${ph.toUpperCase()}
-                </div>
-            `).join('')}
-        </div>
-    `;
-
-    if (sections.length === 0) {
-        html += `<div class="empty">No interventions defined for this phase.</div>`;
-    } else {
-        sections.forEach(sec => {
-            html += `
-                <div class="sec-block">
-                    <div class="sec-block-hdr">
-                        <div class="sec-block-title">${sec}</div>
-                    </div>
-                    ${phaseData[sec].map(iv => `
-                        <div class="iv-row" onclick="viewIntervention('${sec}', '${iv.name}')">
-                            <div class="iv-info">
-                                <div class="iv-name">${iv.name}</div>
-                                <div class="iv-desc">${iv.summary || ''}</div>
-                            </div>
+            let html = '';
+            protocols.forEach(p => {
+                const isActive = p.id === curPid;
+                html += `
+                    <div class="sb-proto" style="cursor:pointer; padding:10px; border-bottom:1px solid #eee;">
+                        <div onclick="selectProto(${p.id})" style="font-weight:${isActive ? 'bold' : 'normal'}">
+                            ${p.name}
                         </div>
-                    `).join('')}
+                    </div>
+                `;
+            });
+            sb.innerHTML = html;
+        }
+
+        function renderMain() {
+            const main = document.querySelector('.main');
+            if (!main || protocols.length === 0) return;
+
+            const p = protocols.find(x => x.id === curPid) || protocols[0];
+            const phaseData = p.phases[curPhase] || {};
+
+            let html = `
+                <h2>${p.name}</h2>
+                <p>${p.description}</p>
+                <div style="margin: 15px 0;">
+                    ${Object.keys(p.phases).map(ph => `
+                        <button onclick="selectPhase('${ph}')" style="font-weight:${curPhase === ph ? 'bold' : 'normal'}">
+                            ${ph.toUpperCase()}
+                        </button>
+                    `).join(' ')}
                 </div>
             `;
-        });
-    }
-    main.innerHTML = html;
-}
 
-// Ensure global state variables are defined at the top of your script
-let curPid = null;
-let curPhase = 'preoperative';
+            for (const section in phaseData) {
+                html += `<h3>${section}</h3>`;
+                phaseData[section].forEach(iv => {
+                    html += `
+                        <div style="margin-bottom:10px; padding:10px; background:#f9f9f9;">
+                            <strong>${iv.name}</strong><br>
+                            <small>${iv.summary}</small>
+                        </div>
+                    `;
+                });
+            }
+            main.innerHTML = html;
+        }
 
-function selectProto(id) { curPid = id; renderSidebar(); renderMain(); }
-function selectPhase(ph) { curPhase = ph; renderSidebar(); renderMain(); }
+        function selectProto(id) { curPid = id; renderSidebar(); renderMain(); }
+        function selectPhase(ph) { curPhase = ph; renderMain(); }
 
-async function initApp() {
-setStatus('saving', 'Syncing with cloud...');
-try {
-    const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': JSONBIN_API_KEY }
-    });
-
-    if (!response.ok) throw new Error('Cloud fetch failed');
-
-    const data = await response.json();
-    // JSONBin returns data inside a 'record' property
-    protocols = data.record.protocols || data.record;
-    setStatus('ok', 'Cloud Sync Active');
-} catch (err) {
-    console.warn("JSONBin error, falling back to local file:", err);
-    const local = await fetch('./protocols.json');
-    const localData = await local.json();
-    protocols = localData.protocols;
-    setStatus('ok', 'Running Local Version');
-}
-renderSidebar();
-renderMain();
-}
-
-        // ... [Rest of your rendering logic from index.html] ...
-
+        // Start the app
         initApp();
     </script>
 </body>
