@@ -1,139 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERAS Pocket Guide</title>
-    <style>
-        /* Essential styles for the layout to show up */
-        body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
-        #sidebar { width: 250px; border-right: 1px solid #ddd; padding: 10px; overflow-y: auto; }
-        #main-content { flex: 1; padding: 20px; overflow-y: auto; }
-        .status { padding: 5px 10px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; }
-        .status.ok { background: #e6fffa; color: #2c7a7b; }
-        .status.saving { background: #fffaf0; color: #9c4221; }
-        .status.err { background: #fff5f5; color: #c53030; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERAS Pocket Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky:#42C0F5; --indigo:#6F6BD7; --deep:#3a37a8;
+  --bg:#f7f9fc; --text:#1a1a2e; --muted:#6b7280; --border:#e5eaf2;
+  --shadow:0 4px 24px rgba(111,107,215,.10),0 1px 4px rgba(0,0,0,.06);
+  --font:-apple-system,"DM Sans",BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  --serif:"DM Serif Display",Georgia,serif;
+  --success:#10b981;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(135deg,var(--sky),var(--indigo));min-height:100vh;color:var(--text)}
+#app{display:flex;flex-direction:column;min-height:100vh;animation:fadeIn .4s ease}
+.hdr{padding:36px 20px 14px;text-align:center}
+.hdr-title{font-family:var(--serif);font-size:28px;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.15)}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.72);margin-top:4px;letter-spacing:.5px}
+.role-bar{display:flex;align-items:center;gap:7px;padding:10px 20px 6px;justify-content:center;flex-wrap:wrap}
+.role-lbl{font-size:10px;font-weight:500;color:rgba(255,255,255,0.7);letter-spacing:.5px;text-transform:uppercase;margin-right:2px}
+.role-pill{padding:5px 13px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85);font-family:var(--font);transition:all .15s;white-space:nowrap}
+.role-pill:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.5)}
+.role-pill.active{background:#fff;border-color:#fff;color:var(--indigo)}
+.panel{background:var(--bg);border-radius:24px 24px 0 0;margin:0 10px;flex:1;display:flex;flex-direction:column;box-shadow:0 -6px 24px rgba(0,0,0,.10);overflow:hidden;min-height:0}
+.ph{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;border-bottom:1.5px solid var(--border);background:#fff;flex-shrink:0}
+.ph-title{font-size:15px;font-weight:700;color:var(--text);flex:1}
+.ph-badge{font-size:11px;font-weight:700;color:var(--indigo);background:rgba(111,107,215,.1);padding:3px 10px;border-radius:20px}
+.back{width:32px;height:32px;border-radius:50%;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--indigo);flex-shrink:0}
+.back:hover{background:rgba(111,107,215,.1)}
+.back svg{width:18px;height:18px}
+.scroll{flex:1;overflow-y:auto;padding:10px}
+.scroll::-webkit-scrollbar{width:3px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.tip{text-align:center;font-size:12px;color:var(--muted);padding:10px 20px 2px;font-style:italic}
+.ctx{background:#fff;border-top:1.5px solid var(--border);padding:9px 18px;font-size:11px;color:var(--muted);display:flex;gap:5px;align-items:center;flex-shrink:0}
+.ctx-dot{color:var(--indigo)}
+.card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:9px;cursor:pointer;transition:all .18s;animation:up .25s ease both}
+.card:hover{border-color:var(--sky);box-shadow:var(--shadow);transform:translateY(-1px)}
+.card-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.card-desc{font-size:12px;color:var(--muted);font-style:italic;line-height:1.45}
+.pcard{display:flex;align-items:center;gap:12px}
+.pcard-icon{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--sky),var(--indigo));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pcard-icon svg{width:20px;height:20px;fill:#fff}
+.pcard-info{flex:1}
+.pcard-chev svg{width:15px;height:15px;stroke:var(--muted);fill:none}
+.phase-row{display:flex;align-items:center;gap:10px}
+.pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sec-hdr{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--indigo);padding:14px 4px 6px}
+.detail-body{flex:1;overflow-y:auto;padding:18px 18px 32px;background:#fff;font-size:15px;line-height:1.7;color:var(--text)}
+.detail-body h2{font-family:var(--serif);font-size:20px;color:var(--text);margin:0 0 8px}
+.detail-body h3{font-size:15px;font-weight:700;color:var(--text);margin:16px 0 6px}
+.detail-body p{margin-bottom:10px}
+.detail-body ul,.detail-body ol{padding-left:20px;margin-bottom:10px}
+.detail-body li{margin-bottom:4px}
+.detail-body strong{font-weight:700;color:var(--deep)}
+.detail-body em{font-style:italic;color:var(--muted)}
+.detail-body table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+.detail-body th{background:linear-gradient(135deg,var(--sky),var(--indigo));color:#fff;padding:7px 10px;text-align:left;font-weight:700}
+.detail-body td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.detail-body tr:nth-child(even) td{background:rgba(66,192,245,.04)}
+.detail-body img{max-width:100%;border-radius:8px;margin:8px 0;display:block}
+.stabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
+.stab{padding:7px 14px;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-family:var(--font);transition:all .15s;white-space:nowrap}
+.stab:hover{border-color:var(--indigo);color:var(--indigo)}
+.stab.active{background:linear-gradient(135deg,var(--sky),var(--indigo));border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(111,107,215,.3)}
+.stab-panel{display:none}
+.stab-panel.show{display:block;animation:up .2s ease}
+.role-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.3px;text-transform:uppercase;vertical-align:middle;margin-left:4px}
+.role-badge.periop{background:rgba(66,192,245,.15);color:#185FA5}
+.role-badge.intraop{background:rgba(111,107,215,.15);color:#3C3489}
+.role-badge.surgery{background:rgba(16,185,129,.13);color:#085041}
+.role-empty{text-align:center;padding:20px;color:var(--muted);font-size:12px;font-style:italic}
+.spin-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--muted);font-size:13px}
+.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--indigo);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-
-    <div id="sidebar">
-        <div id="status-area"></div>
-        <div class="sb-scroll"></div>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-title">ERAS Pocket Guide</div>
+    <div class="hdr-sub">VANDERBILT UNIVERSITY &middot; ENHANCED RECOVERY AFTER SURGERY</div>
+    <div class="role-bar">
+      <span class="role-lbl">Role:</span>
+      <button class="role-pill active" onclick="setRole('all',this)">All</button>
+      <button class="role-pill" onclick="setRole('periop',this)">Periop Team</button>
+      <button class="role-pill" onclick="setRole('intraop',this)">Intraop Team</button>
+      <button class="role-pill" onclick="setRole('surgery',this)">Surgery Team</button>
     </div>
+  </div>
+  <div class="panel" id="panel">
+    <div class="spin-wrap"><div class="spin"></div><span>Loading protocols&hellip;</span></div>
+  </div>
+</div>
+<script>
+const BIN_ID = '69c41751b7ec241ddca1add6';
+const API_KEY = '$2a$10$AjQEh3KkVoufT5BTqyCazemisCPpV3iIX5i6G.1U43QZdUDER2aDC';
+const SEED = {"protocols":[{"id":1,"name":"Colorectal","description":"Vanderbilt University — Anesthesia Practice Standardization Protocol v12.2017","phases":{"preoperative":{"Medications":[{"name":"Gabapentin","summary":"100–300 mg PO 1 hr before OR; reduce for age >65, OSA","content":"<h2>Gabapentin</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li><strong>100–300 mg PO</strong> 1 hour before OR time</li><li>Reduce to <strong>100 mg</strong> if &gt;65y</li><li>Consider omitting or 100 mg if &gt;75y</li><li>Dose reduction for OSA patients</li></ul>","roles":["periop"]},{"name":"Acetaminophen (Tylenol)","summary":"1000 mg PO 1 hr before OR; reduce to 650 mg if <70 kg","content":"<h2>Acetaminophen (Tylenol)</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li><strong>1000 mg PO</strong> 1 hour before OR time</li><li>Reduce to <strong>650 mg PO</strong> if &lt;70 kg</li><li>Do not use if history of liver disease</li></ul>","roles":["periop"]},{"name":"PONV Prophylaxis — Preoperative","summary":"TIVA preferred; scopolamine patch only if >3 risk factors and hx of PONV","content":"<h2>PONV Prophylaxis — Preoperative</h2><p><strong>*TIVA preferred</strong> for all colorectal patients.</p><ul><li>Scopolamine patch if &gt;3 Apfel risk factors — only if hx of PONV or motion sickness</li><li>Do NOT use if &gt;65y with OSA, dementia, or anticholinergic use</li></ul><p>See PONV Guidelines on CEBA Website.</p>","roles":["periop"]}]},"regional anesthesia":{"Blocks":[{"name":"TAP Block — Mini-Lap / Hand-Assisted","summary":"Bilateral TAP ± rectus sheath; ropivacaine 0.25% + dexamethasone","content":"<h2>Regional Anesthesia — Mini-Lap or Hand-Assisted Laparoscopy</h2><h3>Pfannenstiel Incision</h3><ul><li>Bilateral TAP Blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>25–30 mL/side</strong></li></ul><h3>Periumbilical Incision</h3><ul><li>Bilateral TAP + Bilateral Rectus Sheath blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>2 mg</strong> — <strong>10–15 mL/side</strong></li></ul>","roles":["periop","intraop"]},{"name":"TAP Block — Ostomy Takedown / Creation","summary":"Unilateral TAP block; ropivacaine 0.25% + dexamethasone 4 mg, 25–30 mL","content":"<h2>Regional Anesthesia — Ostomy Takedown / Creation</h2><ul><li>Unilateral TAP Block</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>25–30 mL</strong></li></ul>","roles":["periop","intraop"]},{"name":"TAP Block — Laparotomy","summary":"Bilateral TAP + rectus sheath; thoracic epidural if incision above T8","content":"<h2>Regional Anesthesia — Laparotomy</h2><ul><li>Bilateral TAP + Bilateral Rectus Sheath blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>2 mg</strong> — <strong>10–15 mL/side</strong></li></ul><div style='margin-top:12px;padding:10px 14px;background:rgba(111,107,215,0.07);border-left:3px solid #6F6BD7;border-radius:0 8px 8px 0;'><strong>Thoracic Epidural:</strong> Place if incision extends above T8. Discuss with surgeon before planning.</div>","roles":["periop","intraop"]}]},"intraoperative":{"Anesthesia":[{"name":"TIVA with Propofol","summary":"***TIVA preferred*** — avoid volatile unless propofol allergy","content":"<h2>TIVA with Propofol</h2><p>Use <strong>propofol infusion</strong> as the primary anesthetic agent. Please avoid volatile agents unless the patient has a propofol allergy.</p>","roles":["intraop"]},{"name":"Opioid Minimization","summary":"No induction opioids; ketamine + esmolol for HR control","content":"<h2>Opioid Minimization</h2><ul><li><strong>No induction opioids</strong></li><li>Propofol or volatile anesthetic + ketamine</li><li><strong>Esmolol</strong> for heart rate control</li></ul>","roles":["intraop"]},{"name":"Ketamine","summary":"0.5 mg/kg bolus + 5 mcg/kg/min until fascia closure","content":"<h2>Ketamine — Intraoperative</h2><ul><li><strong>0.5 mg/kg IV bolus</strong> with induction</li><li><strong>5 mcg/kg/min</strong> after induction until fascia closure</li><li>Reduce bolus to <strong>0.25 mg/kg</strong> in patients &gt;65y</li></ul>","roles":["intraop"]},{"name":"Lidocaine Infusion","summary":"1.5 mg/kg bolus then 2 mg/min drip to case end; restart in PACU","content":"<h2>Lidocaine Infusion — Intraoperative</h2><ul><li><strong>1.5 mg/kg bolus</strong> at induction, then <strong>2 mg/min drip</strong> to case end</li><li>Continues in PACU per postop order set</li></ul><h3>Contraindications</h3><ul><li>Unstable heart disease, Recent MI, Heart block, Heart Failure</li><li>Electrolyte disturbances, Liver disease, Seizure disorder</li><li>Current anti-arrhythmic therapy (amiodarone, sotalol)</li></ul>","roles":["intraop"]},{"name":"Ketorolac","summary":"30 mg IV at fascia closure; reduce to 15 mg if >65y, CrCl<30, or <50 kg","content":"<h2>Ketorolac — Intraoperative</h2><ul><li><strong>30 mg IV</strong> at fascia closure</li><li>Reduce to <strong>15 mg IV</strong> if &gt;65y, CrCl &lt;30, or weight &lt;50 kg</li><li>Consider avoiding with history of renal dysfunction or GI bleed</li></ul>","roles":["intraop"]},{"name":"Methadone","summary":"Assess at emergence; 5 mg IV boluses q5–10 min if opioids needed","content":"<h2>Methadone</h2><p>Assess at emergence for need. Majority of patients do <strong>not</strong> require intraoperative opioids.</p><ul><li>If needed: <strong>5 mg IV boluses</strong> q5–10 min on emergence or in PACU</li></ul>","roles":["intraop"]}],"PONV Prophylaxis":[{"name":"PONV Prophylaxis — Intraoperative","summary":"Dexamethasone 8 mg post-induction; ondansetron 4 mg 30 min pre-emergence","content":"<h2>PONV Prophylaxis — Intraoperative</h2><ul><li><strong>Dexamethasone</strong>: 8 mg IV after induction (unless given in TAP blocks)</li><li><strong>Ondansetron</strong>: 4 mg IV 30 min prior to emergence</li></ul>","roles":["intraop"]}],"Fluid & Hemodynamic Management":[{"name":"Intraoperative Fluid Strategy","summary":"LR/Plasma-Lyte only; SV-guided via Clearsight; 3 mL/kg/hr maintenance","content":"<h2>Intraoperative Fluid Strategy</h2><ul><li><strong>LR or Plasma-Lyte only</strong> — NO NORMAL SALINE</li><li>Do not replace deficit empirically</li><li>250 mL bolus after induction; repeat if delta SV &gt;+10%</li><li>Maintenance: <strong>3 mL/kg/hr</strong></li><li>MAP &lt;75 or &gt;10% below baseline + euvolemia → phenylephrine up to 0.5 mcg/kg/min</li><li>Target UOP ≥0.5 mL/kg/hr</li></ul>","roles":["intraop"]}],"NO BUGS (SSI Reduction)":[{"name":"Normothermia","summary":"Goal core temp >36.0°C; forced air warming from holding room","content":"<h2>Normothermia</h2><p><strong>Goal:</strong> Core temp &gt;36.0°C</p><ul><li>Forced air warming beginning in the <strong>holding room</strong></li><li>Warm all IV fluids; warm room if T &lt;36.0°C</li></ul>","roles":["intraop","surgery"]},{"name":"Oxygenation / Tidal Volume","summary":"FiO₂ ≥0.8, TV 8 mL/kg IBW, PEEP ≥6 cmH₂O throughout","content":"<h2>Oxygenation / Tidal Volume</h2><ul><li><strong>FiO₂ ≥ 0.8</strong> with TV <strong>8 mL/kg IBW</strong> + PEEP ≥6 cmH₂O</li><li>Nasal cannula in PACU to maintain SaO₂ 100%</li><li>NC @ 2 L/min prior to PACU discharge and 24 hrs postop</li></ul>","roles":["intraop","surgery"]},{"name":"Glucose Control","summary":"Goal 140–180 mg/dL; FSBG preop on all colorectal patients","content":"<h2>Glucose Control</h2><p><strong>Goal: 140–180 mg/dL.</strong> Do NOT give dextrose unless glucose &lt;60.</p><ul><li>Check FSBG preop on all colorectal patients</li><li>Diabetic: check q1hr intraop</li><li>Non-diabetic ≥120 preop: recheck after 1 hr; if still ≥120, q1hr intraop</li></ul>","roles":["intraop","surgery"]},{"name":"Antibiotics","summary":"Proper drug/dose/timing (<1 hr of incision); re-dose per protocol","content":"<h2>Antibiotics</h2><ul><li>Proper drug, dose, timing (&lt;1 hr of incision), and re-dosing strategy</li><li>See antibiotic dosing chart in VPIMS. OR Pharmacy: 2-4897</li></ul>","roles":["intraop","surgery"]}]},"postoperative":{"Pain Management":[{"name":"Thoracic Epidural","summary":"Bupivacaine 0.1% + hydromorphone 10 mcg/mL; remove at bowel function return","content":"<h2>Thoracic Epidural — Postoperative</h2><ul><li>Bupivacaine <strong>0.1%</strong> + hydromorphone <strong>10 mcg/mL</strong></li><li>Remove day prior to anticipated discharge</li><li>Remove once patient has <strong>flatus or return of bowel function</strong></li></ul>","roles":["periop","intraop","surgery"]},{"name":"Ketamine Infusion","summary":"2.5 mcg/kg/min × 48 hrs; requires 2nd IV + NS carrier at 10 cc/hr","content":"<h2>Ketamine Infusion — Postoperative</h2><ul><li><strong>2.5 mcg/kg/min</strong> × <strong>48 hours</strong> (high concentration bag — not continued from OR)</li><li>Requires 2nd IV + NS carrier at 10 cc/hr</li><li>Max weight: 100 kg</li></ul><h3>Contraindications</h3><ul><li>Increased ICP, history of PTSD or psychotic states, increased IOP</li></ul>","roles":["periop","intraop","surgery"]},{"name":"Lidocaine Infusion","summary":"Continue 24 hrs postop; weight-based: <70 kg→1 mg/min, 70–100→1.5, >100→2","content":"<h2>Lidocaine Infusion — Postoperative</h2><p>Continue for <strong>24 hours</strong> from PACU or after TEC removed.</p><table><tr><th>Weight</th><th>Dose</th></tr><tr><td>&lt;70 kg</td><td>1 mg/min IV</td></tr><tr><td>70–100 kg</td><td>1.5 mg/min IV</td></tr><tr><td>&gt;100 kg</td><td>2 mg/min IV</td></tr></table>","roles":["periop","intraop","surgery"]},{"name":"Gabapentin","summary":"300–600 mg PO q8h POD0 to discharge; continue ×14 days at home","content":"<h2>Gabapentin — Postoperative</h2><ul><li><strong>300–600 mg PO q8h</strong> starting POD0 until discharge</li><li>Lower dose for &gt;65y or significant sedation/dizziness</li><li>Discharge: continue ×<strong>14 days</strong>; taper if on &gt;300 mg q8h</li></ul>","roles":["periop","intraop","surgery"]},{"name":"Acetaminophen","summary":"1000 mg PO q8h POD0 to discharge (max 4000 mg/day)","content":"<h2>Acetaminophen — Postoperative</h2><ul><li><strong>1000 mg PO q8h</strong> POD0 to discharge (max 4000 mg/24 hrs)</li><li>Reduce to <strong>650 mg q6h</strong> if &lt;70 kg</li></ul>","roles":["periop","intraop","surgery"]},{"name":"Ketorolac","summary":"30 mg IV q6h ×3 days; reduce to 15 mg if >65y, CrCl<30, or <50 kg","content":"<h2>Ketorolac — Postoperative</h2><ul><li><strong>30 mg IV q6h × 3 days</strong></li><li>Reduce to 15 mg if &gt;65y, CrCl &lt;30, or weight &lt;50 kg</li></ul>","roles":["periop","intraop","surgery"]},{"name":"Opioid PRN","summary":"Tramadol 50 mg q4h (no SSRI/SNRI); oxycodone 5 mg; hydromorphone IV breakthrough","content":"<h2>Opioid PRN</h2><p>Use lowest possible dose and frequency.</p><ul><li>Tramadol 50 mg q4h PRN — <strong>do not use with SSRI/SNRI</strong></li><li>Oxycodone 5 mg PO q4h PRN</li><li>Hydromorphone 0.25 mg IV q4h PRN (opioid naïve or &gt;65y); 0.5 mg if tolerant</li></ul><h3>Discharge</h3><ul><li>PRN q6h × 3–5 days (12 pills total); tramadol preferred (Schedule IV)</li></ul>","roles":["periop","intraop","surgery"]}],"PONV Treatment":[{"name":"Ondansetron","summary":"4 mg IV/PO q6h PRN — first line","content":"<h2>Ondansetron</h2><p><strong>First line.</strong> 4 mg IV/PO q6h PRN.</p>","roles":["intraop","surgery"]},{"name":"Haloperidol","summary":"0.5–1 mg IV PRN — second line","content":"<h2>Haloperidol</h2><p>0.5–1 mg IV PRN.</p>","roles":["intraop","surgery"]},{"name":"Promethazine","summary":"6.25–12.5 mg IV/PO PRN — ensure patent IV before injecting","content":"<h2>Promethazine</h2><ul><li>6.25–12.5 mg IV/PO PRN</li><li><strong>Ensure patent IV</strong> prior to injection — extravasation causes serious tissue injury</li></ul>","roles":["intraop","surgery"]}],"Diet & Fluids":[{"name":"Diet Advancement","summary":"Full Liquids Plus on POD 1 (surgical team orders)","content":"<h2>Diet Advancement</h2><p>Advance to <strong>Full Liquids Plus</strong> on POD 1 — orders by surgical team.</p>","roles":["surgery"]},{"name":"IV Fluid Reduction","summary":"IVF to 50 cc/hr on POD 1 (surgical team orders)","content":"<h2>IV Fluid Reduction</h2><p>Reduce IVF to <strong>50 cc/hr</strong> on POD 1 — orders by surgical team.</p>","roles":["surgery"]}]}}},{"id":2,"name":"Bariatric","description":"Vanderbilt University — Weight Reduction Surgery ERAS Protocol v2.2019","phases":{"preoperative":{"Assessment":[{"name":"Pain History Assessment","summary":"Thorough pain history: opioids, CSMD verification, sites, psych history","content":"<h2>Pain History Assessment</h2><p><em>Orders by Perioperative Consult Service</em></p><ul><li>Current opioid and non-opioid pain medications</li><li>Current opioid provider + <strong>CSMD verification</strong></li><li>Sites of pain and baseline pain scores</li><li>Previous interventions and efficacy</li><li>Co-morbid psychiatric conditions and medications</li></ul>","roles":["periop"]}],"Medications":[{"name":"Gabapentin","summary":"100–300 mg PO 1 hr before OR; higher dose if opioid-dependent (if safe)","content":"<h2>Gabapentin — Preoperative</h2><ul><li><strong>100–300 mg PO</strong> 1 hr before OR</li><li>Reduce to 100 mg if &gt;65y; consider omitting if &gt;75y</li><li>Dose reduction for OSA or renal dysfunction</li><li>Consider higher dose for opioid-dependent patients (if no sedation risk)</li><li>Patients on home gabapentin: ensure 100–200% of home dose taken AM of surgery</li></ul>","roles":["periop"]},{"name":"Acetaminophen","summary":"1000 mg PO night before + 1000 mg PO 1 hr before OR","content":"<h2>Acetaminophen — Preoperative</h2><ul><li>1000 mg PO <strong>night before surgery</strong> (managed by bariatric surgery team)</li><li><strong>1000 mg PO</strong> 1 hr before OR</li><li>Do not use if Child Class C liver disease</li></ul>","roles":["periop"]},{"name":"PONV Prophylaxis","summary":"TIVA preferred; no routine scopolamine; agents = # of risk factors","content":"<h2>PONV Prophylaxis — Preoperative</h2><p><strong>*TIVA preferred</strong> for bariatric patients. # of PONV agents = # of risk factors.</p><ul><li><strong>No routine scopolamine</strong> — only for 4 Apfel risk factors with hx of PONV</li><li>Do NOT use if &gt;65y with OSA/dementia or anticholinergic use</li></ul>","roles":["periop"]}],"Fluids":[{"name":"Carbohydrate Loading","summary":"Two 12 oz electrolyte + carb drinks morning of surgery (≤2 hrs before OR)","content":"<h2>Carbohydrate Loading</h2><p><em>Managed by Bariatric Surgery Team at pre-op visit</em></p><ul><li><strong>Two 12 oz electrolyte + carbohydrate clear liquid drinks</strong> morning of surgery</li><li>Up to <strong>2 hours before surgery</strong></li><li>Extend to 4 hours prior if advanced diabetes/gastroparesis</li></ul>","roles":["periop"]}]},"regional anesthesia":{"Blocks":[{"name":"Regional Block — Gastric Sleeve","summary":"Bilateral RS block + RIGHT oblique subcostal TAP (position 3 or 4)","content":"<h2>Regional Anesthesia — Gastric Sleeve</h2><h3>Block 1 — Bilateral Rectus Sheath</h3><ul><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>20–30 mL/side</strong></li></ul><h3>Block 2 — RIGHT Oblique Subcostal TAP (OSTAP)</h3><ul><li>Goal: perform in <strong>position 3 or 4</strong></li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>30 mL</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>","roles":["periop","intraop"]},{"name":"Regional Block — Gastric Bypass","summary":"Bilateral rectus sheath blocks only; 20–30 mL/side","content":"<h2>Regional Anesthesia — Gastric Bypass</h2><ul><li>Bilateral Rectus Sheath Blocks</li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>20–30 mL/side</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>","roles":["periop","intraop"]},{"name":"Regional Block — Gastric Bypass (Dr. English)","summary":"Bilateral RS + LEFT oblique subcostal TAP (position 4); 15–30 mL each","content":"<h2>Regional Anesthesia — Gastric Bypass (Dr. English)</h2><h3>Block 1 — Bilateral Rectus Sheath</h3><ul><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>15–30 mL/side</strong></li></ul><h3>Block 2 — LEFT Oblique Subcostal TAP (OSTAP)</h3><ul><li>Goal: <strong>position 4</strong></li><li>Ropivacaine <strong>0.25%</strong> + Dexamethasone <strong>4 mg</strong> — <strong>15–30 mL</strong></li></ul><p><strong>Total ropivacaine must not exceed 3 mg/kg.</strong></p>","roles":["periop","intraop"]},{"name":"Regional Block — Full Laparotomy (Rare)","summary":"Thoracic epidural placement by Perioperative Service","content":"<h2>Regional Anesthesia — Full Laparotomy (Rare)</h2><p>Thoracic Epidural Placement by Perioperative Service.</p>","roles":["periop","intraop"]}]},"intraoperative":{"Anesthesia":[{"name":"TIVA with Propofol + BIS","summary":"25–75 mcg/kg/min adjunct or 200 mcg/kg/min full TIVA; BIS monitor required without volatile","content":"<h2>TIVA with Propofol</h2><ul><li>Adjunct to volatile: <strong>25–75 mcg/kg/min</strong></li><li>Full TIVA: <strong>200 mcg/kg/min</strong></li><li>Use <strong>BIS monitor</strong> without volatile agent</li><li>If on ≥1.3 MAC volatile: contact attending</li></ul>","roles":["intraop"]},{"name":"Opioid Minimization","summary":"No induction opioids; ketamine + lidocaine; esmolol for HR control","content":"<h2>Opioid Minimization</h2><ul><li><strong>No induction opioids</strong></li><li>Propofol + ketamine + lidocaine</li><li><strong>Esmolol</strong> for heart rate control</li></ul>","roles":["intraop"]},{"name":"Ketamine","summary":"0.5 mg/kg → 5 mcg/kg/min until fascia closed → 2.5 mcg/kg/min until emergence","content":"<h2>Ketamine — Intraoperative</h2><p>Use <strong>low concentration bag</strong> (100 mg/100 cc).</p><ul><li><strong>0.5 mg/kg IV bolus</strong> at induction</li><li><strong>5 mcg/kg/min</strong> until fascia closed</li><li><strong>2.5 mcg/kg/min</strong> until emergence</li><li>Reduce bolus to 0.25 mg/kg if &gt;65y</li></ul>","roles":["intraop"]},{"name":"Lidocaine Infusion","summary":"1.5 mg/kg bolus then 2 mg/min to case end; restart in PACU","content":"<h2>Lidocaine Infusion</h2><ul><li><strong>1.5 mg/kg bolus</strong> + <strong>2 mg/min drip</strong> to case end</li><li>Restart in PACU per postop order set</li></ul>","roles":["intraop"]},{"name":"Methadone","summary":"Opioid exposed (1–60 MED) or tolerant (>60 MED): 5–10 mg IV after induction, max 20 mg","content":"<h2>Methadone</h2><p>Most patients do <strong>not</strong> require intraoperative opioids.</p><ul><li>Opioid exposed (1–60 MED) or tolerant (&gt;60 MED): <strong>5–10 mg IV after induction</strong>, max <strong>20 mg</strong></li><li>Otherwise: assess at emergence; 5 mg IV boluses q5–10 min PRN</li></ul>","roles":["intraop"]},{"name":"PONV Prophylaxis — Intraoperative","summary":"Dexamethasone 8 mg; ondansetron 4 mg 30 min pre-emergence; haloperidol 1 mg at skin closure","content":"<h2>PONV Prophylaxis — Intraoperative</h2><ul><li><strong>Dexamethasone</strong>: 8 mg IV after induction (unless in TAP blocks)</li><li><strong>Ondansetron</strong>: 4 mg IV 30 min before emergence</li><li><strong>Haloperidol</strong>: 1 mg IV at skin closure (0.5 mg if &gt;65y) — do not give with known QTc prolongation — <strong>current vial 5 mg/mL: BE CAREFUL</strong></li></ul>","roles":["intraop"]}],"Fluid & Hemodynamic Management":[{"name":"Intraoperative Fluid Strategy","summary":"LR/Plasma-Lyte only; 2–3 mL/kg/hr; norepinephrine preferred; median ~1600 mL","content":"<h2>Fluid Strategy</h2><ul><li><strong>LR or Plasma-Lyte/Normosol only</strong> — NO NORMAL SALINE</li><li>Maintenance: <strong>2–3 mL/kg/hr</strong> + boluses per clinical course</li><li><strong>Norepinephrine</strong> preferred vasopressor (2–10 mcg/min via peripheral IV)</li><li>Median case IVF: ~<strong>1600 mL</strong></li><li>Target UOP ≥0.5 mL/kg/hr if Foley present</li></ul>","roles":["intraop"]}]},"postoperative":{"Pain Management":[{"name":"NSAIDs — Avoid","summary":"Should be avoided; only consider if all multimodal has failed and opioid sedation present","content":"<h2>NSAIDs — Bariatric Patients</h2><p>NSAIDs <strong>should be avoided</strong>. Consider only after all multimodal options have failed and patient has opioid-related sedation. Surgical attending discussion required.</p>","roles":["periop","intraop","surgery"]},{"name":"Lidocaine Infusion","summary":"24 hrs postop: <70 kg→1 mg/min, 70–100→1.5 (~20 cc/hr), >100→2 mg/min (~30 cc/hr)","content":"<h2>Lidocaine Infusion — Postoperative</h2><p><strong>24 hours</strong> postop (can extend based on pain/PO intake).</p><table><tr><th>Weight</th><th>Dose</th><th>Rate</th></tr><tr><td>&lt;70 kg</td><td>1 mg/min IV</td><td>~15 cc/hr</td></tr><tr><td>70–100 kg</td><td>1.5 mg/min IV</td><td>~20 cc/hr</td></tr><tr><td>&gt;100 kg</td><td>2 mg/min IV</td><td>~30 cc/hr</td></tr></table>","roles":["periop","intraop","surgery"]},{"name":"Gabapentin","summary":"300–600 mg PO q8h POD0; renally adjusted; continue ×14 days at discharge","content":"<h2>Gabapentin — Postoperative</h2><ul><li><strong>300–600 mg PO q8h</strong> POD0 to discharge</li><li>Lower dose for &gt;65y or sedation/dizziness</li></ul><table><tr><th>CrCl</th><th>Dose</th></tr><tr><td>&gt;60 mL/min</td><td>300–1200 mg TID</td></tr><tr><td>30–59 mL/min</td><td>200–700 mg BID</td></tr><tr><td>15–29 mL/min</td><td>200–700 mg daily</td></tr><tr><td>&lt;15 mL/min</td><td>100–300 mg daily</td></tr><tr><td>ESRD/HD</td><td>Per CrCl + 125–250 mg after dialysis</td></tr></table>","roles":["periop","intraop","surgery"]},{"name":"Acetaminophen","summary":"1000 mg PO q8h POD0 to discharge; 500 mg q8h for liver disease","content":"<h2>Acetaminophen — Postoperative</h2><ul><li><strong>1000 mg PO q8h</strong> POD0 to discharge (max 4000 mg/day)</li><li><strong>500 mg q8h</strong> for liver disease; avoid if Child Class C</li></ul>","roles":["periop","intraop","surgery"]},{"name":"Opioid PRN","summary":"Tramadol first line; oxycodone second; hydromorphone IV for breakthrough only","content":"<h2>Opioid PRN</h2><h3>Opioid-Naive</h3><ul><li><strong>Tramadol</strong> 50–100 mg q4–6h PRN (caution with SSRI/SNRI/TCAs)</li><li><strong>Oxycodone</strong> 5 mg PO q4h PRN &gt;5/10</li><li><strong>Hydromorphone</strong> IV PRN only if not controlled by other modalities</li></ul><h3>Chronic Opioid Therapy</h3><p>Ensure meeting <strong>100–125% of home oral dose</strong>. Perioperative Service should be involved.</p>","roles":["periop","intraop","surgery"]},{"name":"Rescue Plan — Suboptimal Analgesia","summary":"4-step rescue: H&P → severity → pain type → rescue treatment","content":"<h2>Rescue Plan for Suboptimal Analgesia</h2><table><tr><th>Step</th><th>Action</th><th>Details</th></tr><tr><td><strong>1</strong></td><td>Focused H&amp;P</td><td>Preop analgesia, baseline pain, postop exam — location &amp; etiology</td></tr><tr><td><strong>2</strong></td><td>Assess Severity</td><td>Location, severity, duration, aggravating factors; functional limitations; adverse drug events</td></tr><tr><td><strong>3</strong></td><td>Pain Type</td><td>Neuropathic, inflammatory, visceral, or somatic? Exclude surgical complications first.</td></tr><tr><td><strong>4</strong></td><td>Rescue Treatment</td><td>Confirm all non-opioid options used. Add opioid PO if tolerated, IV if needed.</td></tr></table>","roles":["periop","intraop","surgery"]}],"PONV Treatment":[{"name":"PONV Ladder","summary":"Ondansetron (1st) → haloperidol (2nd) → scopolamine (3rd) → promethazine (4th)","content":"<h2>PONV Treatment Ladder</h2><table><tr><th>Line</th><th>Agent</th><th>Dose</th></tr><tr><td>1st</td><td>Ondansetron</td><td>4 mg IV/PO q6h PRN</td></tr><tr><td>2nd</td><td>Haloperidol</td><td>0.5–1 mg IV q4–6h PRN</td></tr><tr><td>3rd</td><td>Scopolamine patch</td><td>Only if active PONV despite above</td></tr><tr><td>4th</td><td>Promethazine</td><td>6.25–12.5 mg IV/PO q4h PRN (ensure patent IV)</td></tr></table><p>Re-consult Periop Service if uncontrolled. Alternatives: dronabinol (avoid &gt;65y), dexamethasone (discuss with surgery), aprepitant (pharmacy approval needed).</p>","roles":["intraop","surgery"]}],"Post-Discharge":[{"name":"Discharge Opioid Plan","summary":"Taper 30–50% by day 3 post-discharge; if no opioid use 24 hrs pre-discharge → 3-pill rescue only","content":"<h2>Discharge Opioid Plan</h2><p>Follow <strong>TN Together Opioid Prescribing Guidelines</strong>. Prescribe the opioid used in hospital.</p><ul><li>Tramadol 50–100 mg q6h PRN (Schedule IV, refillable by phone; no SSRI/SNRI/TCAs)</li><li>Oxycodone 5 mg q6h PRN (second line)</li><li>Taper ~<strong>30–50% by 3 days</strong> post-discharge, then off</li><li>If no opioid use 24 hrs before discharge → <strong>3-pill rescue pack only</strong></li></ul>","roles":["periop","surgery"]},{"name":"Discharge Multimodal Medications","summary":"Acetaminophen max 3 g/day ×3 days; gabapentin ×14 days; muscle relaxants/alpha-2 ×7 days PRN","content":"<h2>Discharge Multimodal Medications</h2><ul><li><strong>Acetaminophen</strong>: max 3 g/day × 3 days</li><li><strong>Gabapentin</strong>: × 14 days (taper if on &gt;300 mg q8h)</li><li><strong>Muscle relaxants</strong>: PRN × 7 days</li><li><strong>Alpha-2 agonists</strong>: PRN × 7 days or until off opioids</li></ul><h3>Discharge Nausea</h3><ul><li>Ondansetron 4 mg ODT q6h PRN</li><li>Promethazine PO 12.5 mg q4h PRN</li><li>Scopolamine patch if persisting</li></ul>","roles":["periop","surgery"]}]}}}]};
 
-    <div id="main-content" class="main">
-        <div class="empty">Loading protocols...</div>
-    </div>
+const PHASE_COLORS = ['#42C0F5','#6F6BD7','#10b981','#f59e0b','#f87171','#a78bfa'];
+const ROLE_LABELS = { periop: 'Periop', intraop: 'Intraop', surgery: 'Surgery' };
+let protocols = [];
+let activeRole = 'all';
+let _lastView = null;
 
-    <script>
-        // 1. CONFIGURATION
-        const JSONBIN_BIN_ID = 'YOUR_BIN_ID_HERE';
-        const JSONBIN_API_KEY = 'YOUR_API_KEY_HERE';
+const panel = document.getElementById('panel');
 
-        // 2. GLOBAL STATE
-        let protocols = [];
-        let curPid = null;
-        let curPhase = 'preoperative';
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 
-        // 3. UTILITIES
-        function setStatus(type, text) {
-            const statusEl = document.getElementById('status-area');
-            if (!statusEl) return;
-            const typeMap = { 'ok': 'ok', 'saving': 'saving', 'error': 'err', 'err': 'err' };
-            const className = typeMap[type] || 'saving';
-            statusEl.innerHTML = `<div class="status ${className}">${text}</div>`;
-        }
+function setRole(role, btn) {
+  activeRole = role;
+  document.querySelectorAll('.role-pill').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+  if (typeof _lastView === 'function') _lastView();
+}
 
-        // 4. CORE LOGIC
-        async function initApp() {
-            setStatus('saving', 'Syncing with cloud...');
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
-                });
+function ivVisible(iv) {
+  if (activeRole === 'all') return true;
+  if (!iv.roles || iv.roles.length === 0) return true;
+  return iv.roles.indexOf(activeRole) !== -1;
+}
 
-                if (!response.ok) throw new Error('Cloud fetch failed');
+function roleBadge(iv) {
+  if (activeRole !== 'all') return '';
+  if (!iv.roles || iv.roles.length === 0 || iv.roles.length === 3) return '';
+  return iv.roles.map(function(r) {
+    return '<span class="role-badge ' + r + '">' + (ROLE_LABELS[r] || r) + '</span>';
+  }).join('');
+}
 
-                const data = await response.json();
-                // Check both possible JSONBin structures
-                protocols = data.record.protocols || data.record;
+function chevBtn(onclick) {
+  return '<button class="back" onclick="' + onclick + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
+}
+function chevRight() {
+  return '<span class="pcard-chev"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+}
+function ctx(text) {
+  return '<div class="ctx"><span class="ctx-dot">&#9679;</span> ' + text + '</div>';
+}
 
-                if (protocols.length > 0) curPid = protocols[0].id;
+function showProtocols() {
+  _lastView = showProtocols;
+  let html = '<div class="ph"><div class="ph-title">Protocols</div><div class="ph-badge">' + protocols.length + ' protocols</div></div><div class="tip">Select a protocol to begin</div><div class="scroll">';
+  protocols.forEach(function(p, i) {
+    html += '<div class="card pcard" onclick="showPhases(' + i + ')" style="animation-delay:' + (i*50) + 'ms">'
+      + '<div class="pcard-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c.55 0 1 .45 1 1v3h3c.55 0 1 .45 1 1v2c0 .55-.45 1-1 1h-3v3c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-3H6c-.55 0-1-.45-1-1v-2c0-.55.45-1 1-1h3V7c0-.55.45-1 1-1h2z"/></svg></div>'
+      + '<div class="pcard-info"><div class="card-name">' + p.name + '</div><div class="card-desc">' + p.description + '</div></div>'
+      + chevRight() + '</div>';
+  });
+  panel.innerHTML = html + '</div>';
+}
 
-                setStatus('ok', 'Cloud Sync Active');
-            } catch (err) {
-                console.warn("Falling back to local file:", err);
-                try {
-                    const local = await fetch('./protocols.json');
-                    const localData = await local.json();
-                    protocols = localData.protocols;
-                    if (protocols.length > 0) curPid = protocols[0].id;
-                    setStatus('ok', 'Running Local (Offline)');
-                } catch (localErr) {
-                    setStatus('err', 'Failed to load any data');
-                }
-            }
-            renderSidebar();
-            renderMain();
-        }
+function showPhases(pi) {
+  _lastView = function() { showPhases(pi); };
+  const p = protocols[pi];
+  let body = '<div class="tip">Select a phase of care:</div><div class="scroll">';
+  Object.keys(p.phases).forEach(function(ph, i) {
+    const d = p.phases[ph];
+    const isVa = d && d.__type === 'visual_aid';
+    const isReg = ph.toLowerCase() === 'regional anesthesia';
+    const fn = isVa ? 'showVisualAid(' + pi + ',' + i + ')'
+              : isReg ? 'showRegional(' + pi + ',' + i + ')'
+              : 'showSections(' + pi + ',' + i + ')';
+    const label = isVa ? cap(ph) + ' &#x1F5BC;' : cap(ph);
+    body += '<div class="card phase-row" onclick="' + fn + '" style="animation-delay:' + (i*50) + 'ms">'
+      + '<div class="pdot" style="background:' + PHASE_COLORS[i % PHASE_COLORS.length] + '"></div>'
+      + '<div style="flex:1"><div class="card-name">' + label + '</div></div>'
+      + chevRight() + '</div>';
+  });
+  panel.innerHTML = '<div class="ph">' + chevBtn('showProtocols()') + '<div class="ph-title">' + p.name + '</div></div>'
+    + body + '</div>' + ctx('Protocol: ' + p.name);
+}
 
-        function renderSidebar() {
-            const sb = document.querySelector('.sb-scroll');
-            if (!sb) return;
+let _curPi = 0, _curPhaseIdx = 0;
 
-            let html = '';
-            protocols.forEach(p => {
-                const isActive = p.id === curPid;
-                html += `
-                    <div class="sb-proto" style="cursor:pointer; padding:10px; border-bottom:1px solid #eee;">
-                        <div onclick="selectProto(${p.id})" style="font-weight:${isActive ? 'bold' : 'normal'}">
-                            ${p.name}
-                        </div>
-                    </div>
-                `;
-            });
-            sb.innerHTML = html;
-        }
+function showSections(pi, phaseIdx) {
+  _lastView = function() { showSections(pi, phaseIdx); };
+  _curPi = pi; _curPhaseIdx = phaseIdx;
+  const p = protocols[pi];
+  const phaseKey = Object.keys(p.phases)[phaseIdx];
+  if (!phaseKey) return;
+  if (phaseKey.toLowerCase() === 'regional anesthesia') { showRegional(pi, phaseIdx); return; }
+  const sections = p.phases[phaseKey];
+  let body = '<div class="tip">Tap an intervention for more information:</div><div class="scroll">';
+  let totalVisible = 0;
+  Object.entries(sections).forEach(function(entry) {
+    const sec = entry[0], items = entry[1];
+    const isRegSec = sec.toLowerCase() === 'regional anesthesia' && items.length > 1;
+    const visibleItems = isRegSec ? items : items.filter(function(iv) { return ivVisible(iv); });
+    if (!isRegSec && visibleItems.length === 0) return;
+    body += '<div class="sec-hdr">' + sec + '</div>';
+    if (isRegSec) {
+      window._regInlineData = { pi: pi, phaseIdx: phaseIdx, sec: sec };
+      body += '<div class="card" onclick="showRegionalFromInline()"><div class="card-name">Block Selection by Surgery Type</div><div class="card-desc">Tap to select surgery type and view block guidance</div></div>';
+      totalVisible++;
+    } else {
+      visibleItems.forEach(function(iv) {
+        const origIdx = items.indexOf(iv);
+        window['_iv_' + pi + '_' + phaseIdx + '_' + origIdx] = { iv: iv, sec: sec };
+        body += '<div class="card" onclick="showDetail(' + pi + ',' + phaseIdx + ',' + origIdx + ')">'
+          + '<div class="card-name">' + iv.name + roleBadge(iv) + '</div>'
+          + '<div class="card-desc">' + iv.summary + '</div></div>';
+        totalVisible++;
+      });
+    }
+  });
+  if (totalVisible === 0) body += '<div class="role-empty">No interventions for this role in this phase.</div>';
+  const rl = activeRole === 'all' ? '' : ' <span style="font-size:10px;opacity:.7">(' + (ROLE_LABELS[activeRole] || activeRole) + ')</span>';
+  panel.innerHTML = '<div class="ph">' + chevBtn('showPhases(' + pi + ')') + '<div class="ph-title">' + cap(phaseKey) + rl + '</div></div>'
+    + body + '</div>' + ctx('Protocol: ' + p.name);
+}
 
-        function renderMain() {
-            const main = document.querySelector('.main');
-            if (!main || protocols.length === 0) return;
+function showDetail(pi, phaseIdx, ivIdx) {
+  const p = protocols[pi];
+  const phaseKey = Object.keys(p.phases)[phaseIdx];
+  const stored = window['_iv_' + pi + '_' + phaseIdx + '_' + ivIdx];
+  if (!stored) return;
+  const iv = stored.iv, sec = stored.sec;
+  panel.innerHTML = '<div class="ph">' + chevBtn('showSections(' + pi + ',' + phaseIdx + ')') + '<div class="ph-title">' + iv.name + '</div></div>'
+    + (iv.roles && iv.roles.length && iv.roles.length < 3 ? '<div style="padding:6px 18px 0;display:flex;gap:5px;flex-wrap:wrap">' + (iv.roles.map(function(r){ return '<span class="role-badge ' + r + '">' + (ROLE_LABELS[r]||r) + '</span>'; }).join('')) + '</div>' : '')
+    + '<div class="detail-body">' + iv.content + '</div>'
+    + ctx(p.name + ' &middot; ' + cap(phaseKey) + ' &middot; ' + sec);
+}
 
-            const p = protocols.find(x => x.id === curPid) || protocols[0];
-            const phaseData = p.phases[curPhase] || {};
+function showVisualAid(pi, phaseIdx) {
+  _lastView = function() { showVisualAid(pi, phaseIdx); };
+  const p = protocols[pi];
+  const phaseKey = Object.keys(p.phases)[phaseIdx];
+  const d = p.phases[phaseKey];
+  panel.innerHTML = '<div class="ph">' + chevBtn('showPhases(' + pi + ')') + '<div class="ph-title">' + (d.title || cap(phaseKey)) + '</div></div>'
+    + '<div class="detail-body" style="text-align:center;padding:16px">'
+    + (d.image ? '<img src="' + d.image + '" style="max-width:100%;border-radius:10px;object-fit:contain">' : '<p style="color:var(--muted)">No image.</p>')
+    + (d.caption ? '<div style="margin-top:12px;font-size:13px;color:var(--muted);font-style:italic">' + d.caption + '</div>' : '')
+    + '</div>' + ctx(p.name + ' &middot; Visual Aid');
+}
 
-            let html = `
-                <h2>${p.name}</h2>
-                <p>${p.description}</p>
-                <div style="margin: 15px 0;">
-                    ${Object.keys(p.phases).map(ph => `
-                        <button onclick="selectPhase('${ph}')" style="font-weight:${curPhase === ph ? 'bold' : 'normal'}">
-                            ${ph.toUpperCase()}
-                        </button>
-                    `).join(' ')}
-                </div>
-            `;
+function showRegionalFromInline() {
+  if (!window._regInlineData) return;
+  const d = window._regInlineData;
+  const p = protocols[d.pi];
+  const phaseKey = Object.keys(p.phases)[d.phaseIdx];
+  const items = (p.phases[phaseKey] || {})[d.sec] || [];
+  _renderRegionalSelector(d.pi, d.phaseIdx, items);
+}
 
-            for (const section in phaseData) {
-                html += `<h3>${section}</h3>`;
-                phaseData[section].forEach(iv => {
-                    html += `
-                        <div style="margin-bottom:10px; padding:10px; background:#f9f9f9;">
-                            <strong>${iv.name}</strong><br>
-                            <small>${iv.summary}</small>
-                        </div>
-                    `;
-                });
-            }
-            main.innerHTML = html;
-        }
+function showRegional(pi, phaseIdx) {
+  _lastView = function() { showRegional(pi, phaseIdx); };
+  const p = protocols[pi];
+  const phaseKey = Object.keys(p.phases)[phaseIdx];
+  const phaseData = p.phases[phaseKey] || {};
+  const allItems = Object.values(phaseData).find(function(v) { return Array.isArray(v) && v.length > 0; }) || [];
+  const items = activeRole === 'all' ? allItems : (allItems.filter(function(iv){ return ivVisible(iv); }).length > 0 ? allItems.filter(function(iv){ return ivVisible(iv); }) : allItems);
+  _renderRegionalSelector(pi, phaseIdx, items);
+}
 
-        function selectProto(id) { curPid = id; renderSidebar(); renderMain(); }
-        function selectPhase(ph) { curPhase = ph; renderMain(); }
+function _renderRegionalSelector(pi, phaseIdx, items) {
+  const p = protocols[pi];
+  const phaseKey = Object.keys(p.phases)[phaseIdx];
+  if (!items.length) {
+    panel.innerHTML = '<div class="ph">' + chevBtn('showPhases(' + pi + ')') + '<div class="ph-title">Regional Anesthesia</div></div><div class="tip">No blocks defined.</div>';
+    return;
+  }
+  let tabs = '', panels = '';
+  items.forEach(function(iv, i) {
+    const label = iv.name.replace(/^(TAP Block|Regional Block|Regional Anesthesia)\s*[—\-]\s*/i, '');
+    tabs += '<button class="stab ' + (i===0?'active':'') + '" onclick="switchRegTab(' + i + ',this)">' + label + '</button>';
+    panels += '<div class="stab-panel ' + (i===0?'show':'') + '" id="rtab-' + i + '"><div class="detail-body" style="padding:14px 0 0;background:transparent">' + iv.content + '</div></div>';
+  });
+  panel.innerHTML = '<div class="ph">' + chevBtn('showPhases(' + pi + ')') + '<div class="ph-title">Regional Anesthesia</div></div>'
+    + '<div style="padding:12px 14px 0;flex-shrink:0"><div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">Select surgery type:</div>'
+    + '<div class="stabs">' + tabs + '</div></div>'
+    + '<div style="flex:1;overflow-y:auto;padding:0 14px 24px">' + panels + '</div>'
+    + ctx(p.name + ' &middot; Regional Anesthesia');
+}
 
-        // Start the app
-        initApp();
-    </script>
+function switchRegTab(idx, btn) {
+  document.querySelectorAll('.stab').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.stab-panel').forEach(function(p) { p.classList.remove('show'); });
+  btn.classList.add('active');
+  document.getElementById('rtab-' + idx).classList.add('show');
+}
+
+// Load from JSONBin, fall back to baked-in seed
+async function loadData() {
+  try {
+    const r = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (data && Array.isArray(data.protocols)) return data.protocols;
+    if (data && data.record && Array.isArray(data.record.protocols)) return data.record.protocols;
+    if (Array.isArray(data)) return data;
+    throw new Error('Unexpected shape');
+  } catch(e) {
+    console.warn('JSONBin load failed, using seed:', e.message);
+    return SEED.protocols || [];
+  }
+}
+
+loadData().then(function(data) {
+  protocols = data;
+  if (!protocols.length) protocols = SEED.protocols || [];
+  showProtocols();
+});
+</script>
 </body>
 </html>
