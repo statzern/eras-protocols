@@ -16,6 +16,27 @@ const JSONBIN_API_KEY = '$2a$10$AjQEh3KkVoufT5BTqyCazemisCPpV3iIX5i6G.1U43QZdUDE
 
 let protocols = [];
 
+/**
+ * Updates the visual status badge in the top bar.
+ * @param {string} type - The status type ('ok', 'saving', or 'err').
+ * @param {string} text - The text to display in the badge.
+ */
+function setStatus(type, text) {
+    const statusEl = document.getElementById('status-area');
+    if (!statusEl) return;
+
+    // Map internal types to CSS classes used in your style block
+    const typeMap = { 'ok': 'ok', 'saving': 'saving', 'error': 'err', 'err': 'err' };
+    const className = typeMap[type] || 'saving';
+
+    statusEl.innerHTML = `
+        <div class="status ${className}">
+            <div class="status-dot"></div>
+            ${text}
+        </div>
+    `;
+}
+
 async function initApp() {
 setStatus('saving', 'Syncing with cloud...');
 try {
