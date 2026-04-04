@@ -16,15 +16,14 @@
   import { getFirestore, doc, getDoc, setDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCKkTIrqqDgIPoqwDAv1rpvKPkUgDm66Uk",
-      authDomain: "eras-pocket-guide.firebaseapp.com",
-      projectId: "eras-pocket-guide",
-      storageBucket: "eras-pocket-guide.firebasestorage.app",
-      messagingSenderId: "513133624745",
-      appId: "1:513133624745:web:b6568e65faa205731398b8",
-      measurementId: "G-KVTHVQS7X9"
-    };
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
 
   const ALLOWED_DOMAIN = "vumc.org"; // Only allow @vumc.org emails
 
@@ -92,6 +91,8 @@
     document.getElementById('app').style.display = 'none';
     document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
     document.getElementById('login-btn').classList.remove('ready');
+    // Reset to sign-in tab (setLoginMode may not be defined yet on first load, so guard it)
+    if (typeof setLoginMode === 'function') setLoginMode('signin');
   };
 
   window._showLoginErr = function(msg) {
@@ -148,6 +149,42 @@
         msg = 'Too many attempts. Please wait a moment and try again.';
       } else if (e.code === 'auth/user-disabled') {
         msg = 'This account has been disabled. Contact your administrator.';
+      }
+      _showLoginErr(msg);
+    }
+  };
+
+  // ── REGISTER ───────────────────────────────────────────────────────────
+  window.doRegister = async function() {
+    const email    = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
+    const password = document.getElementById('login-password-input').value;
+    const confirm  = document.getElementById('login-confirm-input').value;
+    document.getElementById('login-err').textContent = '';
+    document.getElementById('login-err').style.color = 'var(--danger)';
+
+    if (!email) { document.getElementById('login-err').textContent = 'Please enter your email.'; return; }
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+      document.getElementById('login-err').textContent = 'Only @' + ALLOWED_DOMAIN + ' email addresses are permitted.';
+      return;
+    }
+    if (!password) { document.getElementById('login-err').textContent = 'Please enter a password.'; return; }
+    if (password.length < 8) { document.getElementById('login-err').textContent = 'Password must be at least 8 characters.'; return; }
+    if (password !== confirm) { document.getElementById('login-err').textContent = 'Passwords do not match.'; return; }
+
+    document.getElementById('login-email-wrap').style.display = 'none';
+    document.getElementById('login-loading').style.display = '';
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged fires automatically and shows role selection
+    } catch(e) {
+      let msg = 'Registration failed. Please try again.';
+      if (e.code === 'auth/email-already-in-use') {
+        msg = 'An account with this email already exists. Try signing in.';
+      } else if (e.code === 'auth/weak-password') {
+        msg = 'Password is too weak. Use at least 8 characters.';
+      } else if (e.code === 'auth/invalid-email') {
+        msg = 'Invalid email address.';
       }
       _showLoginErr(msg);
     }
@@ -396,21 +433,33 @@ mark{background:rgba(66,192,245,.25);border-radius:2px;padding:0 1px}
   <div class="login-sub">VANDERBILT UNIVERSITY &middot; ENHANCED RECOVERY AFTER SURGERY</div>
   <div class="login-card">
 
-    <!-- Step 1: Email / Password Sign-In -->
+    <!-- Step 1: Email / Password Sign-In or Register -->
     <div id="login-email-wrap">
-      <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;line-height:1.5">
-        Sign in with your <strong>@vumc.org</strong> email address.
-      </p>
-      <label class="login-label">Email</label>
+
+      <!-- Mode toggle -->
+      <div style="display:flex;background:var(--bg);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px">
+        <button id="tab-signin" onclick="setLoginMode('signin')"
+          style="flex:1;border:none;border-radius:8px;padding:8px;font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;background:var(--indigo);color:#fff;transition:all .15s">
+          Sign In
+        </button>
+        <button id="tab-register" onclick="setLoginMode('register')"
+          style="flex:1;border:none;border-radius:8px;padding:8px;font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s">
+          Create Account
+        </button>
+      </div>
+
+      <label class="login-label">VUMC Email</label>
       <input class="login-input" id="login-email-input" type="email"
         placeholder="yourname@vumc.org" autocomplete="email" autocapitalize="none"
         oninput="onEmailInput()" onkeydown="if(event.key==='Enter')document.getElementById('login-password-input').focus()">
+
       <label class="login-label">Password</label>
       <div style="position:relative;margin-bottom:6px">
         <input class="login-input" id="login-password-input" type="password"
           placeholder="••••••••" autocomplete="current-password"
           style="margin-bottom:0;padding-right:42px"
-          oninput="onEmailInput()" onkeydown="if(event.key==='Enter')doEmailSignIn()">
+          oninput="onEmailInput()"
+          onkeydown="if(event.key==='Enter'&&window._loginMode==='signin')doEmailSignIn();else if(event.key==='Enter')document.getElementById('login-confirm-input').focus()">
         <button type="button" onclick="togglePw()" tabindex="-1"
           style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:var(--muted)">
           <svg id="pw-eye" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -418,13 +467,24 @@ mark{background:rgba(66,192,245,.25);border-radius:2px;padding:0 1px}
           </svg>
         </button>
       </div>
-      <div style="text-align:right;margin-bottom:16px">
+
+      <!-- Confirm password — only shown in register mode -->
+      <div id="confirm-pw-wrap" style="display:none">
+        <label class="login-label">Confirm Password</label>
+        <input class="login-input" id="login-confirm-input" type="password"
+          placeholder="••••••••" autocomplete="new-password"
+          oninput="onEmailInput()" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+
+      <!-- Forgot password — only shown in sign-in mode -->
+      <div id="forgot-pw-wrap" style="text-align:right;margin-bottom:16px">
         <button type="button" onclick="doForgotPassword()"
           style="background:none;border:none;font-family:var(--fn);font-size:11px;color:var(--indigo);cursor:pointer;padding:0">
           Forgot password?
         </button>
       </div>
-      <button onclick="doEmailSignIn()" id="login-submit-btn"
+
+      <button id="login-submit-btn" onclick="window._loginMode==='signin'?doEmailSignIn():doRegister()"
         style="width:100%;background:linear-gradient(135deg,var(--sky),var(--indigo));color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--fn);font-size:14px;font-weight:700;cursor:pointer;opacity:.4;transition:opacity .15s;pointer-events:none">
         Sign In
       </button>
@@ -610,15 +670,43 @@ function selectRole(el) {
   document.getElementById('login-btn').classList.toggle('ready', !!selectedRole);
 }
 
-// doEmailSignIn, doForgotPassword, doConfirmRole, doLogout are defined in the Firebase module above
+// doEmailSignIn, doRegister, doForgotPassword, doConfirmRole, doLogout are defined in the Firebase module above
+
+window._loginMode = 'signin'; // tracks current tab
+
+function setLoginMode(mode) {
+  window._loginMode = mode;
+  const isRegister = mode === 'register';
+
+  // Tab styles
+  document.getElementById('tab-signin').style.background    = isRegister ? 'none'          : 'var(--indigo)';
+  document.getElementById('tab-signin').style.color         = isRegister ? 'var(--muted)'  : '#fff';
+  document.getElementById('tab-register').style.background  = isRegister ? 'var(--indigo)' : 'none';
+  document.getElementById('tab-register').style.color       = isRegister ? '#fff'          : 'var(--muted)';
+
+  // Show/hide fields
+  document.getElementById('confirm-pw-wrap').style.display  = isRegister ? '' : 'none';
+  document.getElementById('forgot-pw-wrap').style.display   = isRegister ? 'none' : '';
+
+  // Update button label and autocomplete hint
+  document.getElementById('login-submit-btn').textContent   = isRegister ? 'Create Account' : 'Sign In';
+  document.getElementById('login-password-input').setAttribute('autocomplete', isRegister ? 'new-password' : 'current-password');
+
+  // Clear errors and recheck readiness
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('login-err').style.color = 'var(--danger)';
+  onEmailInput();
+}
 
 function onEmailInput() {
   const email    = (document.getElementById('login-email-input').value || '').trim();
   const password = (document.getElementById('login-password-input').value || '');
+  const confirm  = (document.getElementById('login-confirm-input').value || '');
   const btn      = document.getElementById('login-submit-btn');
-  const ready    = email.length > 0 && password.length > 0;
-  btn.style.opacity        = ready ? '1'    : '0.4';
-  btn.style.pointerEvents  = ready ? 'auto' : 'none';
+  const isRegister = window._loginMode === 'register';
+  const ready    = email.length > 0 && password.length > 0 && (!isRegister || confirm.length > 0);
+  btn.style.opacity       = ready ? '1'    : '0.4';
+  btn.style.pointerEvents = ready ? 'auto' : 'none';
 }
 
 function togglePw() {
