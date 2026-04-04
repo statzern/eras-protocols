@@ -145,7 +145,7 @@
     document.getElementById('login-err').textContent = '';
   };
 
-  window._completeLogin = function(fbUser, role, defaultProtocol) {
+  window._completeLogin = async function(fbUser, role, defaultProtocol) {
     const displayName = fbUser.displayName || fbUser.email.split('@')[0];
     user = { name: displayName, role, email: fbUser.email };
     selectedRole = role;
@@ -154,7 +154,13 @@
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app').style.display = '';
     updateUserUI();
+
+    // Load protocols now that Firebase is ready and user is authenticated
+    document.getElementById('main').innerHTML = '<div class="spin-wrap"><div class="spin"></div><span>Loading protocols\u2026</span></div>';
+    const data = await loadData();
+    protocols = (data && data.length) ? data : JSON.parse(JSON.stringify(SEED.protocols || []));
     renderSbProtos();
+
     // Auto-load default protocol if one is set
     if (defaultProtocol && protocols.find(p => p.id === defaultProtocol)) {
       renderProtocol(defaultProtocol);
@@ -1286,15 +1292,9 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-document.getElementById('main').innerHTML = '<div class="spin-wrap"><div class="spin"></div><span>Loading protocols\u2026</span></div>';
-
-loadData().then(data => {
-  protocols = data.length ? data : (SEED.protocols || []);
-  renderSbProtos();
-  // Auth state is managed by Firebase onAuthStateChanged (defined in the module above).
-  // If the user is already signed in with a saved role, _completeLogin will be called
-  // automatically. No localStorage handling needed here.
-});
+// Data loading is deferred until after Firebase auth completes in _completeLogin.
+// Just show the login screen — onAuthStateChanged handles everything from there.
+document.getElementById('main').innerHTML = '<div class="spin-wrap"><div class="spin"></div><span>Loading\u2026</span></div>';
 
 </script>
 </body>
