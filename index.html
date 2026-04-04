@@ -274,11 +274,13 @@
   // ── ROLE CONFIRM ───────────────────────────────────────────────────────
   window.doConfirmRole = async function() {
     if (!selectedRole || !window._fbUser) return;
-    // Save role to Firestore so this device is remembered
+    // Save role to Firestore. isEditor defaults to false — must be granted
+    // manually in Firestore console by an administrator.
     try {
       await setDoc(doc(db, "userRoles", window._fbUser.uid), {
         role: selectedRole,
         email: window._fbUser.email,
+        isEditor: false,
         updatedAt: new Date().toISOString()
       });
     } catch(e) {
@@ -891,7 +893,8 @@ async function applyRoleChange() {
     try {
       await window._firestoreSetDoc(
         window._firestoreDoc(window._firebaseDb, 'userRoles', window._fbUser.uid),
-        { role: newRole, email: user.email, updatedAt: new Date().toISOString() }
+        { role: newRole, email: user.email, updatedAt: new Date().toISOString() },
+        { merge: true }
       );
     } catch(e) { console.warn('Could not save role:', e); }
   }
@@ -913,7 +916,8 @@ async function toggleDefaultProtocol(e, pid) {
     try {
       await window._firestoreSetDoc(
         window._firestoreDoc(window._firebaseDb, 'userRoles', window._fbUser.uid),
-        { role: user.role, email: user.email, defaultProtocol: newDefault, updatedAt: new Date().toISOString() }
+        { role: user.role, email: user.email, defaultProtocol: newDefault, updatedAt: new Date().toISOString() },
+        { merge: true }
       );
     } catch(err) { console.warn('Could not save default protocol:', err); }
   }

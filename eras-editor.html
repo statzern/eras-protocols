@@ -9,7 +9,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword,
            sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, collection, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, collection, getDocs, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyCKkTIrqqDgIPoqwDAv1rpvKPkUgDm66Uk",
@@ -57,6 +57,19 @@
     if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
       await signOut(auth);
       showLoginErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts.');
+      return;
+    }
+    // Check Firestore for editor permission
+    try {
+      const snap = await getDoc(doc(db, 'userRoles', fbUser.uid));
+      if (!snap.exists() || snap.data().isEditor !== true) {
+        await signOut(auth);
+        showLoginErr('You do not have editor access. Contact an administrator to request access.');
+        return;
+      }
+    } catch(e) {
+      await signOut(auth);
+      showLoginErr('Could not verify editor permissions. Please try again.');
       return;
     }
     window._editorUser = fbUser;
