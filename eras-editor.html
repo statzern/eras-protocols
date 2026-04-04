@@ -308,6 +308,7 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
 .rsel{height:26px;border:1.5px solid var(--border);border-radius:5px;font-family:var(--font);font-size:11px;color:var(--text);background:var(--card);padding:0 6px;cursor:pointer;outline:none;min-width:90px}
 .rte{min-height:240px;max-height:380px;overflow-y:auto;padding:14px 16px;border:1.5px solid var(--border);border-radius:0 0 9px 9px;font-family:var(--font);font-size:14px;line-height:1.7;color:var(--text);background:var(--card);outline:none}
 .rte:focus{border-color:var(--sky)}
+.rte h1{font-family:var(--serif);font-size:22px;margin:14px 0 6px;font-weight:400}
 .rte h2{font-family:var(--serif);font-size:18px;margin:12px 0 5px}
 .rte h3{font-size:14px;font-weight:700;margin:10px 0 4px}
 .rte h4{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--indigo);margin:9px 0 3px}
@@ -385,6 +386,21 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
 .unsaved-actions{display:flex;flex-direction:column;gap:8px}
 .unsaved-actions .btn{width:100%;justify-content:center;border-radius:10px;padding:11px}
 @keyframes pulse-save{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.4)}50%{box-shadow:0 0 0 6px rgba(255,255,255,0)}}
+
+/* ── RTE COLOR PICKER ── */
+.rte-color-wrap{position:relative;display:inline-flex;align-items:center}
+.rte-color-btn{width:26px;height:26px;border-radius:5px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0;padding:0;flex-direction:column;gap:1px}
+.rte-color-btn:hover{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.rte-color-btn-icon{font-size:11px;font-weight:800;color:var(--text);line-height:1}
+.rte-color-swatch{width:16px;height:3px;border-radius:2px;background:var(--indigo)}
+.rte-color-panel{position:absolute;top:30px;left:0;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:500;display:none;min-width:158px}
+.rte-color-panel.open{display:block}
+.rte-color-panel-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+.rte-color-swatches{display:flex;flex-wrap:wrap;gap:5px}
+.rte-color-swatch-btn{width:22px;height:22px;border-radius:5px;border:2px solid transparent;cursor:pointer;transition:all .12s;flex-shrink:0}
+.rte-color-swatch-btn:hover{transform:scale(1.15);border-color:rgba(0,0,0,.2)}
+.rte-color-swatch-btn.active{border-color:var(--text)}
+.rte-h1{font-family:var(--serif);font-size:20px;font-weight:400}
 </style>
 </head>
 <body>
@@ -436,7 +452,8 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
         <div class="rte-bar">
           <div class="rte-grp">
             <select class="rsel" onchange="rfmt('formatBlock',this.value);this.blur()">
-              <option value="p">Paragraph</option>
+              <option value="h1">Title</option>
+              <option value="p" selected>Paragraph</option>
               <option value="h2">Heading 1</option>
               <option value="h3">Heading 2</option>
               <option value="h4">Heading 3</option>
@@ -446,6 +463,18 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
             <button class="rbtn" onclick="rfmt('bold')" title="Bold"><strong>B</strong></button>
             <button class="rbtn" onclick="rfmt('italic')" title="Italic"><em>I</em></button>
             <button class="rbtn" onclick="rfmt('underline')" title="Underline"><u>U</u></button>
+          </div>
+          <div class="rte-grp">
+            <div class="rte-color-wrap">
+              <button class="rte-color-btn" id="rte-color-trigger" onclick="toggleColorPanel(event)" title="Font color">
+                <span class="rte-color-btn-icon">A</span>
+                <span class="rte-color-swatch" id="rte-active-swatch"></span>
+              </button>
+              <div class="rte-color-panel" id="rte-color-panel">
+                <div class="rte-color-panel-label">Theme Colors</div>
+                <div class="rte-color-swatches" id="rte-color-swatches"></div>
+              </div>
+            </div>
           </div>
           <div class="rte-grp">
             <button class="rbtn" onclick="rfmt('insertUnorderedList')" title="Bullet list"><svg viewBox="0 0 20 20"><path d="M4 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
@@ -674,7 +703,8 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
         <div class="rte-bar">
           <div class="rte-grp">
             <select class="rsel" onchange="rfmt('formatBlock',this.value);this.blur()">
-              <option value="p">Paragraph</option>
+              <option value="h1">Title</option>
+              <option value="p" selected>Paragraph</option>
               <option value="h2">Heading 1</option>
               <option value="h3">Heading 2</option>
               <option value="h4">Heading 3</option>
@@ -684,6 +714,18 @@ input[type=text]:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(66,192,
             <button class="rbtn" onclick="rfmt('bold')" title="Bold"><strong>B</strong></button>
             <button class="rbtn" onclick="rfmt('italic')" title="Italic"><em>I</em></button>
             <button class="rbtn" onclick="rfmt('underline')" title="Underline"><u>U</u></button>
+          </div>
+          <div class="rte-grp">
+            <div class="rte-color-wrap">
+              <button class="rte-color-btn" id="rte-color-trigger" onclick="toggleColorPanel(event)" title="Font color">
+                <span class="rte-color-btn-icon">A</span>
+                <span class="rte-color-swatch" id="rte-active-swatch"></span>
+              </button>
+              <div class="rte-color-panel" id="rte-color-panel">
+                <div class="rte-color-panel-label">Theme Colors</div>
+                <div class="rte-color-swatches" id="rte-color-swatches"></div>
+              </div>
+            </div>
           </div>
           <div class="rte-grp">
             <button class="rbtn" onclick="rfmt('insertUnorderedList')" title="Bullet list"><svg viewBox="0 0 20 20"><path d="M4 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM6 5h12v2H6V5zm0 4h12v2H6V9zm0 4h12v2H6v-2z"/></svg></button>
@@ -2013,6 +2055,72 @@ function switchTab(tab,btn) {
   btn.classList.add('active');
 }
 function rfmt(cmd,val) { $('rte').focus(); document.execCommand(cmd,false,val||null); }
+
+// ── RTE COLOR PICKER ─────────────────────────────────────────────────────────
+const RTE_COLORS = [
+  { label: 'Sky',       hex: '#42C0F5' },
+  { label: 'Indigo',    hex: '#6F6BD7' },
+  { label: 'Deep',      hex: '#3a37a8' },
+  { label: 'Success',   hex: '#10b981' },
+  { label: 'Warning',   hex: '#f59e0b' },
+  { label: 'Danger',    hex: '#ef4444' },
+  { label: 'Muted',     hex: '#6b7280' },
+  { label: 'Text',      hex: '#1a1a2e' },
+  { label: 'Blue Dark', hex: '#185FA5' },
+  { label: 'Purple',    hex: '#3C3489' },
+  { label: 'Green Dark','hex': '#085041' },
+  { label: 'Black',     hex: '#000000' },
+];
+
+let _activeRteColor = '#1a1a2e'; // default to body text color
+
+function initColorPicker() {
+  const container = document.getElementById('rte-color-swatches');
+  if (!container || container.children.length) return; // already built
+  RTE_COLORS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'rte-color-swatch-btn';
+    btn.style.background = c.hex;
+    btn.title = c.label;
+    btn.dataset.hex = c.hex;
+    btn.onclick = (e) => { e.stopPropagation(); applyRteColor(c.hex); };
+    container.appendChild(btn);
+  });
+}
+
+function toggleColorPanel(e) {
+  e.stopPropagation();
+  initColorPicker();
+  const panel = document.getElementById('rte-color-panel');
+  panel.classList.toggle('open');
+  // Close on outside click
+  if (panel.classList.contains('open')) {
+    setTimeout(() => {
+      document.addEventListener('click', closeColorPanel, { once: true });
+    }, 0);
+  }
+}
+
+function closeColorPanel() {
+  const panel = document.getElementById('rte-color-panel');
+  if (panel) panel.classList.remove('open');
+}
+
+function applyRteColor(hex) {
+  _activeRteColor = hex;
+  // Update swatch indicator on button
+  const swatch = document.getElementById('rte-active-swatch');
+  if (swatch) swatch.style.background = hex;
+  // Update active state on swatches
+  document.querySelectorAll('.rte-color-swatch-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.hex === hex);
+  });
+  closeColorPanel();
+  // Apply color to selected text
+  $('rte').focus();
+  document.execCommand('foreColor', false, hex);
+}
+
 function rInsertTable() {
   const rows=prompt('Rows (including header):','3');
   const cols=prompt('Columns:','2');
