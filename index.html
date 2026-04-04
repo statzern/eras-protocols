@@ -234,22 +234,40 @@
   // ── FORGOT PASSWORD ────────────────────────────────────────────────────
   window.doForgotPassword = async function() {
     const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
-    document.getElementById('login-err').textContent = '';
+    const errEl = document.getElementById('login-err');
+    errEl.style.color = 'var(--danger)';
+    errEl.textContent = '';
+
     if (!email) {
-      document.getElementById('login-err').textContent = 'Enter your @' + ALLOWED_DOMAIN + ' email above first.';
+      errEl.textContent = 'Enter your @' + ALLOWED_DOMAIN + ' email above first.';
       return;
     }
     if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
-      document.getElementById('login-err').textContent = 'Only @' + ALLOWED_DOMAIN + ' addresses are permitted.';
+      errEl.textContent = 'Only @' + ALLOWED_DOMAIN + ' addresses are permitted.';
       return;
     }
+
+    // Show sending state
+    errEl.style.color = 'var(--muted)';
+    errEl.textContent = 'Sending reset email\u2026';
+
     try {
       await sendPasswordResetEmail(auth, email);
-      document.getElementById('login-err').style.color = 'var(--success)';
-      document.getElementById('login-err').textContent = 'Password reset email sent. Check your inbox.';
+      errEl.style.color = 'var(--success)';
+      errEl.textContent = 'Reset email sent! Check your inbox (and spam folder).';
     } catch(e) {
-      document.getElementById('login-err').style.color = 'var(--danger)';
-      document.getElementById('login-err').textContent = 'Could not send reset email. Check the address and try again.';
+      errEl.style.color = 'var(--danger)';
+      if (e.code === 'auth/user-not-found') {
+        // Don't reveal whether account exists — show same success message
+        errEl.style.color = 'var(--success)';
+        errEl.textContent = 'Reset email sent! Check your inbox (and spam folder).';
+      } else if (e.code === 'auth/invalid-email') {
+        errEl.textContent = 'Invalid email address.';
+      } else if (e.code === 'auth/too-many-requests') {
+        errEl.textContent = 'Too many attempts. Please wait a few minutes and try again.';
+      } else {
+        errEl.textContent = 'Could not send reset email (' + (e.code || e.message) + ')';
+      }
     }
   };
 
@@ -742,6 +760,15 @@ const DEFAULT_COLOR = '#a78bfa';
 const ROLE_LABELS = {periop:'Periop Team',intraop:'Intraop Team',surgery:'Surgery Team',all:'All Roles'};
 const ROLE_COLORS = {periop:'#42C0F5',intraop:'#6F6BD7',surgery:'#10b981',all:'#f59e0b'};
 
+// ── PHASE ORDER HELPER ────────────────────────────────────────────────────────
+const CANONICAL_PHASE_ORDER = ['preoperative', 'regional anesthesia', 'intraoperative', 'postoperative'];
+function sortedPhaseEntries(phases) {
+  const keys = Object.keys(phases || {});
+  const canonical = CANONICAL_PHASE_ORDER.filter(ph => keys.includes(ph));
+  const custom    = keys.filter(ph => !CANONICAL_PHASE_ORDER.includes(ph));
+  return [...canonical, ...custom].map(ph => [ph, phases[ph]]);
+}
+
 let protocols = [];
 let user = null;
 let showAll = false;
@@ -945,7 +972,7 @@ function renderProtocol(pid) {
   const p = protocols.find(x => x.id === pid);
   if (!p) return;
   document.getElementById('topbar-title').textContent = p.name;
-  if (!openPhases[pid]) openPhases[pid] = new Set(Object.keys(p.phases));
+  if (!openPhases[pid]) openPhases[pid] = new Set(sortedPhaseEntries(p.phases).map(([ph])=>ph));
 
   const isFiltered = !showAll && user && user.role !== 'all';
   const roleLabel = user ? (ROLE_LABELS[user.role] || user.role) : 'All Roles';
@@ -963,7 +990,7 @@ function renderProtocol(pid) {
   filterBar += '</div>';
 
   let phasesHtml = '';
-  Object.entries(p.phases).forEach(([ph, phaseData]) => {
+  sortedPhaseEntries(p.phases).forEach(([ph, phaseData]) => {
     const col = PHASE_COLORS[ph] || DEFAULT_COLOR;
     const isOpen = openPhases[pid] && openPhases[pid].has(ph);
     const phId = 'ph_' + pid + '_' + ph.replace(/\W/g, '_');
@@ -1150,7 +1177,7 @@ function doSearch(q) {
   const ql = q.toLowerCase();
   const hits = [];
   protocols.forEach(p => {
-    Object.entries(p.phases).forEach(([ph, phaseData]) => {
+    sortedPhaseEntries(p.phases).forEach(([ph, phaseData]) => {
       if (!phaseData || phaseData.__type === 'visual_aid') return;
       Object.entries(phaseData).forEach(([sec, items]) => {
         if (!Array.isArray(items)) return;
@@ -1203,7 +1230,7 @@ function renderRegTool() {
   if (regState.pid === null) {
     let html = '<div class="reg-step">Step 1 \u2014 Select protocol</div>';
     protocols.forEach(p => {
-      const hasReg = Object.keys(p.phases).some(ph => ph.toLowerCase() === 'regional anesthesia');
+      const hasReg = sortedPhaseEntries(p.phases).some(([ph]) => ph.toLowerCase() === 'regional anesthesia');
       if (!hasReg) return;
       html += '<div class="reg-opt" onclick="regPick(' + p.id + ')">'
         + '<div class="reg-opt-check"></div>'
@@ -1214,7 +1241,7 @@ function renderRegTool() {
     return;
   }
   const p = protocols.find(x => x.id === regState.pid);
-  const regKey = Object.keys(p.phases).find(ph => ph.toLowerCase() === 'regional anesthesia');
+  const regKey = sortedPhaseEntries(p.phases).map(([ph])=>ph).find(ph => ph.toLowerCase() === 'regional anesthesia');
   const blocks = regKey ? (Object.values(p.phases[regKey]).find(v => Array.isArray(v)) || []) : [];
 
   if (regState.idx === null) {
