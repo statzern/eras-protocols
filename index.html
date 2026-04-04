@@ -16,15 +16,15 @@
   import { getFirestore, doc, getDoc, setDoc, collection, getDocs }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCKkTIrqqDgIPoqwDAv1rpvKPkUgDm66Uk",
-      authDomain: "eras-pocket-guide.firebaseapp.com",
-      projectId: "eras-pocket-guide",
-      storageBucket: "eras-pocket-guide.firebasestorage.app",
-      messagingSenderId: "513133624745",
-      appId: "1:513133624745:web:b6568e65faa205731398b8",
-      measurementId: "G-KVTHVQS7X9"
-    };
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCKkTIrqqDgIPoqwDAv1rpvKPkUgDm66Uk",
+    authDomain:        "eras-pocket-guide.firebaseapp.com",
+    projectId:         "eras-pocket-guide",
+    storageBucket:     "eras-pocket-guide.firebasestorage.app",
+    messagingSenderId: "513133624745",
+    appId:             "1:513133624745:web:b6568e65faa205731398b8",
+    measurementId:     "G-KVTHVQS7X9"
+  };
 
   const ALLOWED_DOMAIN = "vumc.org"; // Only allow @vumc.org emails
 
@@ -104,7 +104,8 @@
       if (snap.exists() && snap.data().role) {
         // Known device / returning user — auto-login with saved role
         const savedRole = snap.data().role;
-        _completeLogin(fbUser, savedRole, /*skipRoleScreen=*/true);
+        const savedDefault = snap.data().defaultProtocol || null;
+        _completeLogin(fbUser, savedRole, savedDefault);
       } else {
         // First time — show role selection
         _showRoleSelection(fbUser);
@@ -144,16 +145,22 @@
     document.getElementById('login-err').textContent = '';
   };
 
-  window._completeLogin = function(fbUser, role, skipRoleScreen) {
+  window._completeLogin = function(fbUser, role, defaultProtocol) {
     const displayName = fbUser.displayName || fbUser.email.split('@')[0];
     user = { name: displayName, role, email: fbUser.email };
     selectedRole = role;
     showAll = (role === 'all');
+    window._defaultProtocol = defaultProtocol || null;
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app').style.display = '';
     updateUserUI();
     renderSbProtos();
-    renderProtoList();
+    // Auto-load default protocol if one is set
+    if (defaultProtocol && protocols.find(p => p.id === defaultProtocol)) {
+      renderProtocol(defaultProtocol);
+    } else {
+      renderProtoList();
+    }
   };
 
   // ── EMAIL SIGN-IN ──────────────────────────────────────────────────────
@@ -259,7 +266,7 @@
     } catch(e) {
       console.warn("Could not save role to Firestore:", e);
     }
-    _completeLogin(window._fbUser, selectedRole);
+    _completeLogin(window._fbUser, selectedRole, null);
   };
 
   // ── SIGN OUT ───────────────────────────────────────────────────────────
@@ -357,6 +364,11 @@ mark{background:rgba(66,192,245,.25);border-radius:2px;padding:0 1px}
 .proto-card-name{font-size:15px;font-weight:700}
 .proto-card-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
 .proto-card-chev svg{width:16px;height:16px;stroke:var(--border);fill:none}
+.proto-star{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;background:none;cursor:pointer;border-radius:8px;transition:all .15s;padding:0}
+.proto-star svg{width:18px;height:18px;transition:all .15s}
+.proto-star:hover svg{stroke:var(--warning)}
+.proto-star.active svg{stroke:var(--warning);fill:var(--warning)}
+.proto-default-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--warning);background:rgba(245,158,11,.12);border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
 .pv-header{background:var(--card);padding:12px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:52px;z-index:100}
 .pv-header-info{flex:1;min-width:0}
 .pv-name{font-family:var(--serif);font-size:18px}
@@ -862,6 +874,25 @@ async function applyRoleChange() {
   renderProtoList();
 }
 
+
+// ── DEFAULT PROTOCOL ──────────────────────────────────────────────────────
+async function toggleDefaultProtocol(e, pid) {
+  e.stopPropagation();
+  if (!window._fbUser) return;
+  const current = window._defaultProtocol || null;
+  const newDefault = (current === pid) ? null : pid;
+  window._defaultProtocol = newDefault;
+  if (window._firestoreSetDoc && window._firestoreDoc && window._firebaseDb) {
+    try {
+      await window._firestoreSetDoc(
+        window._firestoreDoc(window._firebaseDb, 'userRoles', window._fbUser.uid),
+        { role: user.role, email: user.email, defaultProtocol: newDefault, updatedAt: new Date().toISOString() }
+      );
+    } catch(err) { console.warn('Could not save default protocol:', err); }
+  }
+  renderProtoList();
+}
+
 // ── FILTERING ─────────────────────────────────────────────────────────────
 function ivVisible(iv) {
   if (showAll) return true;
@@ -881,12 +912,25 @@ function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 function renderProtoList() {
   activePid = null;
   document.getElementById('topbar-title').textContent = 'ERAS Pocket Guide';
+  const defaultPid = window._defaultProtocol || null;
+  const sorted = defaultPid
+    ? [...protocols].sort((a, b) => (b.id === defaultPid ? 1 : 0) - (a.id === defaultPid ? 1 : 0))
+    : protocols;
   let html = '<div class="proto-list">';
-  protocols.forEach((p, i) => {
-    html += '<div class="proto-card" onclick="renderProtocol(' + p.id + ')" style="animation-delay:' + (i*60) + 'ms">'
-      + '<div class="proto-card-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c.55 0 1 .45 1 1v3h3c.55 0 1 .45 1 1v2c0 .55-.45 1-1 1h-3v3c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-3H6c-.55 0-1-.45-1-1v-2c0-.55.45-1 1-1h3V7c0-.55.45-1 1-1h2z"/></svg></div>'
-      + '<div class="proto-card-info"><div class="proto-card-name">' + p.name + '</div><div class="proto-card-desc">' + p.description + '</div></div>'
-      + '<div class="proto-card-chev"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>'
+  sorted.forEach((p, i) => {
+    const isDefault = p.id === defaultPid;
+    const defaultBadge = isDefault ? '<span class="proto-default-badge">\u2b50 Default</span>' : '';
+    const cardStyle = 'animation-delay:' + (i*60) + 'ms' + (isDefault ? ';border-color:rgba(245,158,11,.4);box-shadow:0 0 0 1.5px rgba(245,158,11,.25)' : '');
+    const starStroke = isDefault ? 'var(--warning)' : 'var(--border)';
+    const starFill   = isDefault ? 'var(--warning)' : 'none';
+    html += '<div class="proto-card" style="' + cardStyle + '">'
+      + '<div class="proto-card-icon" onclick="renderProtocol(' + p.id + ')" style="cursor:pointer"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c.55 0 1 .45 1 1v3h3c.55 0 1 .45 1 1v2c0 .55-.45 1-1 1h-3v3c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-3H6c-.55 0-1-.45-1-1v-2c0-.55.45-1 1-1h3V7c0-.55.45-1 1-1h2z"/></svg></div>'
+      + '<div class="proto-card-info" onclick="renderProtocol(' + p.id + ')" style="cursor:pointer">'
+      + '<div class="proto-card-name">' + p.name + defaultBadge + '</div>'
+      + '<div class="proto-card-desc">' + p.description + '</div></div>'
+      + '<button class="proto-star' + (isDefault ? ' active' : '') + '" onclick="toggleDefaultProtocol(event,' + p.id + ')" title="' + (isDefault ? 'Remove default' : 'Set as default') + '">'
+      + '<svg viewBox="0 0 24 24" fill="' + starFill + '" stroke="' + starStroke + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      + '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>'
       + '</div>';
   });
   document.getElementById('main').innerHTML = html + '</div>';
