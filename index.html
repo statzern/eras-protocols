@@ -5,6 +5,205 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ERAS Pocket Guide</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script type="module">
+  // ── FIREBASE CONFIG ────────────────────────────────────────────────────
+  // TODO: Replace these values with your Firebase project credentials
+  // from https://console.firebase.google.com → Project Settings → Your Apps → Web App
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+           sendPasswordResetEmail, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKkTIrqqDgIPoqwDAv1rpvKPkUgDm66Uk",
+      authDomain: "eras-pocket-guide.firebaseapp.com",
+      projectId: "eras-pocket-guide",
+      storageBucket: "eras-pocket-guide.firebasestorage.app",
+      messagingSenderId: "513133624745",
+      appId: "1:513133624745:web:b6568e65faa205731398b8",
+      measurementId: "G-KVTHVQS7X9"
+    };
+
+  const ALLOWED_DOMAIN = "vumc.org"; // Only allow @vumc.org emails
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // Expose to global scope so inline onclick handlers can reach them
+  window._firebaseAuth     = auth;
+  window._firebaseDb       = db;
+  window._allowedDomain    = ALLOWED_DOMAIN;
+  window._signInWithEmail  = signInWithEmailAndPassword;
+  window._createUser       = createUserWithEmailAndPassword;
+  window._resetPassword    = sendPasswordResetEmail;
+  window._signOut          = signOut;
+  window._onAuthStateChanged = onAuthStateChanged;
+  window._firestoreDoc     = doc;
+  window._firestoreGetDoc  = getDoc;
+  window._firestoreSetDoc  = setDoc;
+
+  // ── AUTH STATE LISTENER ────────────────────────────────────────────────
+  // Runs on every page load and whenever auth state changes
+  onAuthStateChanged(auth, async (fbUser) => {
+    if (!fbUser) {
+      // Not signed in — show login screen
+      window._fbUser = null;
+      _showLoginScreen();
+      return;
+    }
+
+    // Signed in — enforce VUMC domain
+    const email = fbUser.email || "";
+    if (!email.endsWith("@" + ALLOWED_DOMAIN)) {
+      await signOut(auth);
+      _showLoginErr("Access restricted to @" + ALLOWED_DOMAIN + " accounts. Please sign in with your VUMC email.");
+      return;
+    }
+
+    window._fbUser = fbUser;
+
+    // Check Firestore for a saved role for this user
+    try {
+      const snap = await getDoc(doc(db, "userRoles", fbUser.uid));
+      if (snap.exists() && snap.data().role) {
+        // Known device / returning user — auto-login with saved role
+        const savedRole = snap.data().role;
+        _completeLogin(fbUser, savedRole, /*skipRoleScreen=*/true);
+      } else {
+        // First time — show role selection
+        _showRoleSelection(fbUser);
+      }
+    } catch(e) {
+      console.warn("Firestore read failed, falling back to role selection:", e);
+      _showRoleSelection(fbUser);
+    }
+  });
+
+  // ── HELPERS ────────────────────────────────────────────────────────────
+  window._showLoginScreen = function() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('login-email-wrap').style.display = '';
+    document.getElementById('login-role-wrap').style.display = 'none';
+    document.getElementById('login-loading').style.display = 'none';
+    document.getElementById('login-err').textContent = '';
+    document.getElementById('app').style.display = 'none';
+    document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
+    document.getElementById('login-btn').classList.remove('ready');
+  };
+
+  window._showLoginErr = function(msg) {
+    document.getElementById('login-loading').style.display = 'none';
+    document.getElementById('login-email-wrap').style.display = '';
+    document.getElementById('login-err').textContent = msg;
+  };
+
+  window._showRoleSelection = function(fbUser) {
+    document.getElementById('login-loading').style.display = 'none';
+    document.getElementById('login-email-wrap').style.display = 'none';
+    document.getElementById('login-role-wrap').style.display = '';
+    const firstName = (fbUser.displayName || fbUser.email).split(/[\s@]/)[0];
+    document.getElementById('login-greeting').textContent = "Welcome, " + firstName + ". Select your role:";
+    document.getElementById('login-err').textContent = '';
+  };
+
+  window._completeLogin = function(fbUser, role, skipRoleScreen) {
+    const displayName = fbUser.displayName || fbUser.email.split('@')[0];
+    user = { name: displayName, role, email: fbUser.email };
+    selectedRole = role;
+    showAll = (role === 'all');
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').style.display = '';
+    updateUserUI();
+    renderSbProtos();
+    renderProtoList();
+  };
+
+  // ── EMAIL SIGN-IN ──────────────────────────────────────────────────────
+  window.doEmailSignIn = async function() {
+    const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
+    const password = document.getElementById('login-password-input').value;
+    document.getElementById('login-err').textContent = '';
+
+    if (!email) { document.getElementById('login-err').textContent = 'Please enter your email.'; return; }
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+      document.getElementById('login-err').textContent = 'Only @' + ALLOWED_DOMAIN + ' email addresses are permitted.';
+      return;
+    }
+    if (!password) { document.getElementById('login-err').textContent = 'Please enter your password.'; return; }
+
+    document.getElementById('login-email-wrap').style.display = 'none';
+    document.getElementById('login-loading').style.display = '';
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged handles the rest
+    } catch(e) {
+      let msg = 'Sign-in failed. Please try again.';
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        msg = 'Incorrect email or password.';
+      } else if (e.code === 'auth/too-many-requests') {
+        msg = 'Too many attempts. Please wait a moment and try again.';
+      } else if (e.code === 'auth/user-disabled') {
+        msg = 'This account has been disabled. Contact your administrator.';
+      }
+      _showLoginErr(msg);
+    }
+  };
+
+  // ── FORGOT PASSWORD ────────────────────────────────────────────────────
+  window.doForgotPassword = async function() {
+    const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
+    document.getElementById('login-err').textContent = '';
+    if (!email) {
+      document.getElementById('login-err').textContent = 'Enter your @' + ALLOWED_DOMAIN + ' email above first.';
+      return;
+    }
+    if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+      document.getElementById('login-err').textContent = 'Only @' + ALLOWED_DOMAIN + ' addresses are permitted.';
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      document.getElementById('login-err').style.color = 'var(--success)';
+      document.getElementById('login-err').textContent = 'Password reset email sent. Check your inbox.';
+    } catch(e) {
+      document.getElementById('login-err').style.color = 'var(--danger)';
+      document.getElementById('login-err').textContent = 'Could not send reset email. Check the address and try again.';
+    }
+  };
+
+  // ── ROLE CONFIRM ───────────────────────────────────────────────────────
+  window.doConfirmRole = async function() {
+    if (!selectedRole || !window._fbUser) return;
+    // Save role to Firestore so this device is remembered
+    try {
+      await setDoc(doc(db, "userRoles", window._fbUser.uid), {
+        role: selectedRole,
+        email: window._fbUser.email,
+        updatedAt: new Date().toISOString()
+      });
+    } catch(e) {
+      console.warn("Could not save role to Firestore:", e);
+    }
+    _completeLogin(window._fbUser, selectedRole);
+  };
+
+  // ── SIGN OUT ───────────────────────────────────────────────────────────
+  window.doLogout = async function() {
+    // Optionally clear saved role so next login prompts for role again
+    // Uncomment the block below if you want sign-out to forget the role:
+    // if (window._fbUser) {
+    //   await setDoc(doc(db, "userRoles", window._fbUser.uid), { role: null });
+    // }
+    await signOut(auth);
+    user = null; selectedRole = null; activePid = null; showAll = false;
+    closeSb();
+    // onAuthStateChanged will call _showLoginScreen automatically
+  };
+</script>
 <style>
 :root{
   --sky:#42C0F5;--indigo:#6F6BD7;--deep:#3a37a8;
@@ -196,40 +395,83 @@ mark{background:rgba(66,192,245,.25);border-radius:2px;padding:0 1px}
   <div class="login-title">ERAS Pocket Guide</div>
   <div class="login-sub">VANDERBILT UNIVERSITY &middot; ENHANCED RECOVERY AFTER SURGERY</div>
   <div class="login-card">
-    <label class="login-label">Your name</label>
-    <input class="login-input" id="login-name" placeholder="e.g. Dr. Smith" maxlength="40" oninput="onLoginInput()">
-    <label class="login-label">Select your role</label>
-    <div class="role-grid">
-      <div class="role-option" data-role="periop" onclick="selectRole(this)">
-        <div class="role-option-icon" style="background:linear-gradient(135deg,#42C0F5,#6F6BD7)">
-          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div class="role-option-name">Periop Team</div>
-        <div class="role-option-desc">Pre-op &amp; medications</div>
+
+    <!-- Step 1: Email / Password Sign-In -->
+    <div id="login-email-wrap">
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;line-height:1.5">
+        Sign in with your <strong>@vumc.org</strong> email address.
+      </p>
+      <label class="login-label">Email</label>
+      <input class="login-input" id="login-email-input" type="email"
+        placeholder="yourname@vumc.org" autocomplete="email" autocapitalize="none"
+        oninput="onEmailInput()" onkeydown="if(event.key==='Enter')document.getElementById('login-password-input').focus()">
+      <label class="login-label">Password</label>
+      <div style="position:relative;margin-bottom:6px">
+        <input class="login-input" id="login-password-input" type="password"
+          placeholder="••••••••" autocomplete="current-password"
+          style="margin-bottom:0;padding-right:42px"
+          oninput="onEmailInput()" onkeydown="if(event.key==='Enter')doEmailSignIn()">
+        <button type="button" onclick="togglePw()" tabindex="-1"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;color:var(--muted)">
+          <svg id="pw-eye" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
       </div>
-      <div class="role-option" data-role="intraop" onclick="selectRole(this)">
-        <div class="role-option-icon" style="background:linear-gradient(135deg,#6F6BD7,#3a37a8)">
-          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div class="role-option-name">Intraop Team</div>
-        <div class="role-option-desc">Anesthesia &amp; intraop</div>
+      <div style="text-align:right;margin-bottom:16px">
+        <button type="button" onclick="doForgotPassword()"
+          style="background:none;border:none;font-family:var(--fn);font-size:11px;color:var(--indigo);cursor:pointer;padding:0">
+          Forgot password?
+        </button>
       </div>
-      <div class="role-option" data-role="surgery" onclick="selectRole(this)">
-        <div class="role-option-icon" style="background:linear-gradient(135deg,#10b981,#085041)">
-          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </div>
-        <div class="role-option-name">Surgery Team</div>
-        <div class="role-option-desc">Surgical &amp; post-op</div>
-      </div>
-      <div class="role-option" data-role="all" onclick="selectRole(this)">
-        <div class="role-option-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
-          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <div class="role-option-name">All Roles</div>
-        <div class="role-option-desc">View everything</div>
-      </div>
+      <button onclick="doEmailSignIn()" id="login-submit-btn"
+        style="width:100%;background:linear-gradient(135deg,var(--sky),var(--indigo));color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--fn);font-size:14px;font-weight:700;cursor:pointer;opacity:.4;transition:opacity .15s;pointer-events:none">
+        Sign In
+      </button>
     </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Enter ERAS Guide</button>
+
+    <!-- Loading spinner shown during sign-in -->
+    <div id="login-loading" style="display:none;text-align:center;padding:16px 0">
+      <div class="spin" style="margin:0 auto 10px"></div>
+      <div style="font-size:12px;color:var(--muted)">Signing in…</div>
+    </div>
+
+    <!-- Step 2: Role selection (shown after successful sign-in) -->
+    <div id="login-role-wrap" style="display:none">
+      <div id="login-greeting" style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px"></div>
+      <div class="role-grid">
+        <div class="role-option" data-role="periop" onclick="selectRole(this)">
+          <div class="role-option-icon" style="background:linear-gradient(135deg,#42C0F5,#6F6BD7)">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="role-option-name">Periop Team</div>
+          <div class="role-option-desc">Pre-op &amp; medications</div>
+        </div>
+        <div class="role-option" data-role="intraop" onclick="selectRole(this)">
+          <div class="role-option-icon" style="background:linear-gradient(135deg,#6F6BD7,#3a37a8)">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="role-option-name">Intraop Team</div>
+          <div class="role-option-desc">Anesthesia &amp; intraop</div>
+        </div>
+        <div class="role-option" data-role="surgery" onclick="selectRole(this)">
+          <div class="role-option-icon" style="background:linear-gradient(135deg,#10b981,#085041)">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="role-option-name">Surgery Team</div>
+          <div class="role-option-desc">Surgical &amp; post-op</div>
+        </div>
+        <div class="role-option" data-role="all" onclick="selectRole(this)">
+          <div class="role-option-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="role-option-name">All Roles</div>
+          <div class="role-option-desc">View everything</div>
+        </div>
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doConfirmRole()">Enter ERAS Guide</button>
+    </div>
+
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -365,46 +607,45 @@ function selectRole(el) {
   document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   selectedRole = el.dataset.role;
-  onLoginInput();
+  document.getElementById('login-btn').classList.toggle('ready', !!selectedRole);
 }
 
-function onLoginInput() {
-  const name = document.getElementById('login-name').value.trim();
-  document.getElementById('login-btn').classList.toggle('ready', !!(name && selectedRole));
+// doEmailSignIn, doForgotPassword, doConfirmRole, doLogout are defined in the Firebase module above
+
+function onEmailInput() {
+  const email    = (document.getElementById('login-email-input').value || '').trim();
+  const password = (document.getElementById('login-password-input').value || '');
+  const btn      = document.getElementById('login-submit-btn');
+  const ready    = email.length > 0 && password.length > 0;
+  btn.style.opacity        = ready ? '1'    : '0.4';
+  btn.style.pointerEvents  = ready ? 'auto' : 'none';
 }
 
-function doLogin() {
-  const name = document.getElementById('login-name').value.trim();
-  if (!name) { document.getElementById('login-err').textContent = 'Please enter your name.'; return; }
-  if (!selectedRole) { document.getElementById('login-err').textContent = 'Please select a role.'; return; }
-  user = {name, role: selectedRole};
-  localStorage.setItem('eras_user', JSON.stringify(user));
-  showAll = (user.role === 'all');
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app').style.display = '';
-  updateUserUI();
-  renderProtoList();
-}
-
-function doLogout() {
-  localStorage.removeItem('eras_user');
-  user = null; selectedRole = null; activePid = null; showAll = false;
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-name').value = '';
-  document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
-  document.getElementById('login-btn').classList.remove('ready');
-  document.getElementById('login-err').textContent = '';
-  closeSb();
+function togglePw() {
+  const input = document.getElementById('login-password-input');
+  const eye   = document.getElementById('pw-eye');
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>'
+      + '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>'
+      + '<line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
 }
 
 function updateUserUI() {
   if (!user) return;
-  const initials = user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  // Derive initials from display name or fall back to first two chars of email
+  const nameParts = user.name.split(' ').filter(Boolean);
+  const initials = nameParts.length >= 2
+    ? (nameParts[0][0] + nameParts[nameParts.length-1][0]).toUpperCase()
+    : (user.name.slice(0,2)).toUpperCase();
   document.getElementById('user-chip').textContent = initials;
   document.getElementById('topbar-role').textContent = ROLE_LABELS[user.role] || user.role;
   document.getElementById('sb-name').textContent = user.name;
-  document.getElementById('sb-role-label').textContent = ROLE_LABELS[user.role] || user.role;
+  document.getElementById('sb-role-label').textContent = (ROLE_LABELS[user.role] || user.role) + ' · ' + user.email;
 }
 
 // ── FILTERING ─────────────────────────────────────────────────────────────
@@ -761,19 +1002,9 @@ document.getElementById('main').innerHTML = '<div class="spin-wrap"><div class="
 loadData().then(data => {
   protocols = data.length ? data : (SEED.protocols || []);
   renderSbProtos();
-  const saved = localStorage.getItem('eras_user');
-  if (saved) {
-    try {
-      user = JSON.parse(saved);
-      selectedRole = user.role;
-      showAll = (user.role === 'all');
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('app').style.display = '';
-      updateUserUI();
-      renderSbProtos();
-      renderProtoList();
-    } catch(e) { localStorage.removeItem('eras_user'); }
-  }
+  // Auth state is managed by Firebase onAuthStateChanged (defined in the module above).
+  // If the user is already signed in with a saved role, _completeLogin will be called
+  // automatically. No localStorage handling needed here.
 });
 
 </script>
